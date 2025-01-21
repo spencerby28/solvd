@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { INSTAGRAM_APP_ID, INSTAGRAM_APP_SECRET, INSTAGRAM_REDIRECT_URI } from '$env/static/private';
+import { PUBLIC_INSTAGRAM_APP_ID, PUBLIC_INSTAGRAM_REDIRECT_URI, PUBLIC_PRODUCTION_INSTAGRAM_REDIRECT_URI, PUBLIC_PRODUCTION } from '$env/static/public';
+import { INSTAGRAM_APP_SECRET } from '$env/static/private';
 import { createAdminClient, ID, type AppwriteException } from '$lib/appwrite';
 
 export const GET: RequestHandler = async ({ url, request, locals }) => {
@@ -31,10 +32,10 @@ export const GET: RequestHandler = async ({ url, request, locals }) => {
 
 		// Exchange code for access token
 		const formData = new FormData();
-		formData.append('client_id', INSTAGRAM_APP_ID);
+		formData.append('client_id', PUBLIC_INSTAGRAM_APP_ID);
 		formData.append('client_secret', INSTAGRAM_APP_SECRET); 
 		formData.append('grant_type', 'authorization_code');
-		formData.append('redirect_uri', INSTAGRAM_REDIRECT_URI);
+		formData.append('redirect_uri', PUBLIC_PRODUCTION ? PUBLIC_INSTAGRAM_REDIRECT_URI : PUBLIC_PRODUCTION_INSTAGRAM_REDIRECT_URI);
 		formData.append('code', cleanCode);
 
 		const shortLivedTokenResponse = await fetch('https://api.instagram.com/oauth/access_token', {
@@ -67,6 +68,26 @@ export const GET: RequestHandler = async ({ url, request, locals }) => {
 		const longLivedTokenData = await longLivedTokenResponse.json();
 		console.log('[Long-lived token response]', longLivedTokenData);
 
+		// Get Instagram user details
+		const userDetailsResponse = await fetch(
+			`https://graph.instagram.com/v21.0/me?fields=user_id,username&access_token=${longLivedTokenData.access_token}`,
+			{
+				method: 'GET'
+			}
+		);
+
+		if (!userDetailsResponse.ok) {
+			throw error(500, {
+				message: 'Failed to fetch Instagram user details'
+			});
+		}
+
+		const userDetails = await userDetailsResponse.json();
+		console.log('[Instagram user details]', userDetails);
+
+		// Update the user ID to use the one from the user details
+		shortLivedData.user_id = userDetails.user_id;
+
 		finalData = {
 			user_id: shortLivedData.user_id,
 			access_token: longLivedTokenData.access_token,
@@ -90,7 +111,7 @@ export const GET: RequestHandler = async ({ url, request, locals }) => {
 		instagramIntegration = await databases.createDocument(
 			'integrations',
 			'instagram', 
-			ID.unique(),
+			finalData.user_id,
 			{
 				user_id: appwriteUserId,
 				team_id: teamId,
