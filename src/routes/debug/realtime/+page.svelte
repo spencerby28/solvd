@@ -62,7 +62,7 @@
         if (creatingTicket) return;
         creatingTicket = true;
         try {
-            const response = await fetch('/api/web/tickets/create?tenant=sample_team');
+            const response = await fetch('/api/web/tickets/createFake?tenant=sample_team');
             const data = await response.json();
             if (!data.success) {
                 throw new Error(data.error);
@@ -76,7 +76,7 @@
 
     async function sendMessage(ticketId: string, senderType: 'customer' | 'system') {
         try {
-            const response = await fetch('/api/web/message/create', {
+            const response = await fetch('/api/web/message/createFake', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

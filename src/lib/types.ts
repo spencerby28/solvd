@@ -47,3 +47,15 @@ export interface Tickets extends Models.Document {
     priority?: string;
     status?: TicketStatus;
 };
+export interface Customers extends Models.Document {
+    name: string;
+    locale: string;
+    timezone: string;
+    status: string;
+    tenant_id: string;
+    email?: string;
+    instagram_id?: string;
+    instagram_username?: string;
+    shopify_id?: string;
+    tickets?: string[];
+};

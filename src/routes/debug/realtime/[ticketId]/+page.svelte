@@ -34,7 +34,7 @@
 
     async function sendMessage(senderType: 'customer' | 'system') {
         try {
-            const response = await fetch('/api/web/message/create', {
+            const response = await fetch('/api/web/message/createFake', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
