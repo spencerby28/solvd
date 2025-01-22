@@ -17,47 +17,41 @@
         value={metrics.aiHandling}
         title="AI Handling Rate"
         gradientFrom="indigo-400"
-        gradientTo="violet-500"
-        height="180px"
+        gradientTo="indigo-600"
     />
 
     <CustomArc
         value={metrics.avgResponse}
         title="Response Time Target"
         gradientFrom="emerald-400"
-        gradientTo="teal-500"
-        height="180px"
+        gradientTo="emerald-600"
     />
 
     <CustomArc
         value={metrics.satisfaction}
         title="Customer Satisfaction"
         gradientFrom="sky-400"
-        gradientTo="blue-500"
-        height="180px"
+        gradientTo="sky-600"
     />
 
     <CustomArc
         value={metrics.resolution}
         title="SLA Resolution Rate"
         gradientFrom="amber-400"
-        gradientTo="orange-500"
-        height="180px"
+        gradientTo="amber-600"
     />
 
     <CustomArc
         value={metrics.escalation}
         title="Escalation Rate"
         gradientFrom="rose-400"
-        gradientTo="red-500"
-        height="180px"
+        gradientTo="rose-600"
     />
 
     <CustomArc
         value={metrics.handledTotal}
         title="Capacity Utilization"
-        gradientFrom="fuchsia-400"
-        gradientTo="purple-500"
-        height="180px"
+        gradientFrom="purple-400"
+        gradientTo="purple-600"
     />
 </div>

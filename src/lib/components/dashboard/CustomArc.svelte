@@ -5,15 +5,17 @@
     export let title: string;
     export let gradientFrom: string;
     export let gradientTo: string;
-    export let height: string = "120px";
+
+    // Construct the gradient class using Tailwind classes directly
+    $: gradientClass = `from-${gradientFrom} to-${gradientTo}`;
 </script>
 
-<div class="h-[{height}] p-4 border rounded-xl bg-white shadow-md">
-    <h3 class="text-sm font-medium text-gray-600 mb-1">{title}</h3>
+<div class="h-[180px] p-4 border rounded-xl bg-white shadow-md">
+    <h3 class="text-sm font-medium text-gray-600 -mb-2">{title}</h3>
     <Chart>
         <Svg center>
             <Group y={16}>
-                <LinearGradient class="from-{gradientFrom} to-{gradientTo}" let:gradient>
+                <LinearGradient class={gradientClass} let:gradient>
                     <Arc
                         {value}
                         range={[-120, 120]}
@@ -23,7 +25,7 @@
                         spring
                         let:value
                         fill={gradient}
-                        track={{ class: "fill-none stroke-gray-100" }}
+                        track={{ class: "fill-none stroke-surface-content/10" }}
                     >
                         <Text
                             value={Math.round(value) + "%"}
