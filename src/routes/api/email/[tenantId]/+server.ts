@@ -45,32 +45,16 @@ export async function HEAD({ request }: RequestEvent) {
 export async function POST({ request }: RequestEvent) {
 	try {
 		const headers = Object.fromEntries(request.headers.entries());
-		console.log('SNS POST Request Headers:', headers);
-		
-		const data = await request.json();
-		console.log('Raw POST body:', data);
-		
-		// Parse the SNS message
-		const {
-			Type,
-			MessageId,
-			TopicArn,
-			Message,
-			Timestamp,
-			SignatureVersion,
-			Signature,
-			SigningCertURL,
-			UnsubscribeURL
-		} = data;
+		console.log('Email POST Request Headers:', headers);
 
-		console.log('SNS Message Details:', {
-			Type,
-			MessageId, 
-			TopicArn,
-			Message: typeof Message === 'string' ? JSON.parse(Message) : Message,
-			Timestamp,
-			SignatureVersion,
-			SigningCertURL
+		const data = await request.json();
+		console.log('Email POST body:', {
+			from: data.from,
+			to: data.to,
+			subject: data.subject,
+			messageId: data.messageId,
+			date: data.date,
+			body: data.body
 		});
 
 		return json({ success: true });

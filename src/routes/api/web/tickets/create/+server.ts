@@ -1,7 +1,6 @@
-import { Client, Databases, ID, Permission, Role } from 'node-appwrite';
+import { ID, Permission, Role } from 'node-appwrite';
 import { json } from '@sveltejs/kit';
-import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
-import { APPWRITE_KEY } from '$env/static/private';
+import { createAdminClient } from '$lib/appwrite';
 
 export async function GET({ url }) {
     const tenant = url.searchParams.get('tenant');
@@ -9,41 +8,102 @@ export async function GET({ url }) {
         return json({ success: false, error: 'Tenant is required' }, { status: 400 });
     }
 
-    // Initialize Appwrite client
-    const client = new Client()
-        .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
-        .setProject(PUBLIC_APPWRITE_PROJECT)
-        .setKey(APPWRITE_KEY);
+    // Sample data arrays
+    const channels = ['web', 'email', 'phone', 'chat', 'social'];
+    const categories = ['support', 'billing', 'technical', 'sales', 'feature_request', 'bug_report'];
+    const priorities = ['low', 'medium', 'high', 'urgent'];
+    const statuses = ['new', 'open', 'pending', 'resolved', 'closed'];
+    const customerNames = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Sarah Williams', 'Mike Brown'];
+    const subjects = [
+        'Need help with login',
+        'Billing question',
+        'Feature not working',
+        'Account access issue',
+        'Integration problem',
+        'Service disruption'
+    ];
+    const timezones = ['America/New_York', 'Europe/London', 'Asia/Tokyo', 'Australia/Sydney', 'Pacific/Auckland'];
+    const locales = ['en-US', 'es-ES', 'fr-FR', 'de-DE', 'ja-JP'];
+    const initialMessages = [
+        'Hi, I need some help with this issue.',
+        "Hello, I'm having trouble with your service.",
+        'Can someone help me please?',
+        "I'm experiencing some problems.",
+        'Need assistance with my account.',
+        'Having technical difficulties.'
+    ];
+    const emails = [
+        'john.doe@example.com',
+        'jane.smith@example.com',
+        'alex.johnson@example.com',
+        'sarah.williams@example.com',
+        'mike.brown@example.com'
+    ];
+    const customerStatuses = ['active', 'inactive', 'blocked'];
 
-    const databases = new Databases(client);
+    // Random selection helper
+    const randomChoice = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
+
+    // Initialize Appwrite client
+    const { databases } = createAdminClient();
 
     try {
-        // Create ticket and initial message in parallel
+        // Create ticket, message and customer in parallel
         const ticketId = ID.unique();
         const messageId = ID.unique();
+        const customerId = ID.unique();
+        const customerName = randomChoice(customerNames);
+        const channel = randomChoice(channels);
+        const customerLocale = randomChoice(locales);
+        const customerTimezone = randomChoice(timezones);
 
         await Promise.all([
+            // Create customer
+            databases.createDocument(
+                'tickets',
+                'customers',
+                customerId,
+                {
+                    name: customerName,
+                    email: randomChoice(emails),
+                    locale: customerLocale,
+                    timezone: customerTimezone,
+                    instagram_id: null,
+                    instagram_username: null,
+                    shopify_id: null,
+                    tickets: [ticketId],
+                    status: randomChoice(customerStatuses),
+                    tenant_id: tenant
+                },
+                [
+                    Permission.read(Role.team(tenant)),
+                    Permission.update(Role.team(tenant)),
+                    Permission.write(Role.team(tenant, 'admin'))
+                ]
+            ),
+
+            // Create ticket
             databases.createDocument(
                 'tickets',
                 'tickets', 
                 ticketId,
                 {
-                    customer_id: 'sample-customer-123',
-                    channel: 'web',
-                    category: 'support', 
+                    customer_id: customerId,
+                    channel: channel,
+                    category: randomChoice(categories),
                     last_active: new Date().toISOString(),
                     messages: [],
-                    customer_name: 'John Doe',
+                    customer_name: customerName,
                     customer_last_seen: new Date().toISOString(),
-                    customer_locale: 'en-US',
-                    customer_timezone: 'America/New_York',
+                    customer_locale: customerLocale,
+                    customer_timezone: customerTimezone,
                     assigned_to: null,
                     assigned_name: null,
-                    subject: 'Sample Support Ticket',
+                    subject: randomChoice(subjects),
                     internal_messages: [],
                     tenant_id: tenant,
-                    priority: 'low',
-                    status: 'open'
+                    priority: randomChoice(priorities),
+                    status: randomChoice(statuses)
                 },
                 [
                     Permission.read(Role.team(tenant)),
@@ -52,16 +112,17 @@ export async function GET({ url }) {
                 ]
             ),
 
+            // Create message
             databases.createDocument(
                 'tickets',
                 'messages',
                 messageId,
                 {
-                    content: 'Ticket created',
-                    sender_id: 'system',
-                    sender_name: 'System',
-                    sender_type: 'system',
-                    source: 'web_widget',
+                    content: randomChoice(initialMessages),
+                    sender_id: customerId,
+                    sender_name: customerName,
+                    sender_type: 'customer',
+                    source: channel,
                     attachments: [],
                     read_status: false,
                     edited: false,

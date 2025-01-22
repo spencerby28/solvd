@@ -32,10 +32,4 @@
     });
 </script>
 
-<style>
-    :global(body) {
-        background-color: #000000;
-    }
-</style>
-
 <slot />

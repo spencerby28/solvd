@@ -1,5 +1,21 @@
 import type { Models } from "appwrite";
 
+export type TicketStatus = 
+    // Core
+    | 'new'
+    | 'open'
+    | 'pending'
+    | 'resolved'
+    | 'closed'
+    // AI-specific
+    | 'ai_handling'
+    | 'ai_pending'
+    | 'ai_escalated'
+    // Other
+    | 'escalated'
+    | 'spam'
+    | 'reopened';
+
 export interface Messages extends Models.Document {
     content: string;
     sender_id: string;
@@ -29,5 +45,5 @@ export interface Tickets extends Models.Document {
     subject?: string;
     tenant_id?: string;
     priority?: string;
-    status?: string;
+    status?: TicketStatus;
 };
