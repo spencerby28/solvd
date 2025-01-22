@@ -194,8 +194,8 @@
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				<!-- Sankey Diagram -->
 				<div class="bg-white rounded-xl shadow-md p-6">
-					<h2 class="text-xl font-semibold text-gray-900 mb-4">Ticket Flow</h2>
-					<div class="h-[500px]">
+					<h2 class="text-2xl font-bold text-gray-900 mb-4">Ticket Flow</h2>
+					<div class="h-[450px]">
 						<Chart
 							data={data.ticketFlow}
 							{padding}
@@ -332,10 +332,14 @@
 								</Tooltip.List>
 							</Tooltip.Root>
 						</Chart>
+						<div class="flex flex-row items-center justify-center gap-8">
+							<div class="text-gray-600">Today: <span class="font-semibold text-gray-900">3</span></div>
+							<div class="text-gray-600">Last 7 Days: <span class="font-semibold text-gray-900">213</span></div>
+						</div>
 					</div>
 				</div>
 
-				<div class="flex flex-col gap-6">
+				<div class="flex flex-col gap-8">
 					<ArcMetrics />
 					<ActionButtons />
 				</div>

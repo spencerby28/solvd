@@ -11,7 +11,7 @@
 </script>
 
 <div class="h-[180px] p-4 border rounded-xl bg-white shadow-md">
-    <h3 class="text-sm font-medium text-gray-600 -mb-2">{title}</h3>
+    <h3 class="text-sm font-medium text-gray-600 -mb-2 truncate" title={title}>{title}</h3>
     <Chart>
         <Svg center>
             <Group y={16}>

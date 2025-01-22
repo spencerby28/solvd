@@ -3,7 +3,7 @@ import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/p
 import { APPWRITE_KEY } from '$env/static/private';
 
 
-export const SESSION_COOKIE = 'gauntlet-starter';
+export const SESSION_COOKIE = 'solvd';
 export { ID, Query, Role } from 'node-appwrite';
 export type { AppwriteException } from 'node-appwrite';
 
@@ -31,6 +31,9 @@ export function createAnonClient() {
     return {
         get databases() {
             return new Databases(client);
+        },
+        get client() {
+            return client;
         }
     };
 }
@@ -55,5 +58,6 @@ export function createSessionClient(event: any) {
         get databases() {
             return new Databases(client);
         }
+    
     };
 }
