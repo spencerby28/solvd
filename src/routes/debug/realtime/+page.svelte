@@ -1,8 +1,9 @@
 <script lang="ts">
-    import { createBrowserClient } from '$lib/appwrite-browser';
+    
     import { tickets, messages } from '$lib/utils/realtime';
     import type { PageData } from './$types';
     import { Menu, MenuItem, Toggle } from 'svelte-ux';
+    import type { CreateMessagePayload } from '$lib/types';
 
     export let data: PageData;
     let searchTerm = '';
@@ -11,6 +12,10 @@
     let loading = false;
     let creatingTicket = false;
     let showAiMessages = false;
+    $: messageContent = '';
+    let isAgent = true;
+
+    $: console.log('messageContent', messageContent);
 
     $: ticketsList = $tickets;
     $: messagesByTicket = $messages;
@@ -62,7 +67,8 @@
         if (creatingTicket) return;
         creatingTicket = true;
         try {
-            const response = await fetch('/api/web/tickets/createFake?tenant=sample_team');
+            const tenant = selectedTicketData?.tenant_id || 'sample_team';
+            const response = await fetch(`/api/web/tickets/createFake?tenant=${tenant}`);
             const data = await response.json();
             if (!data.success) {
                 throw new Error(data.error);
@@ -74,26 +80,56 @@
         }
     }
 
-    async function sendMessage(ticketId: string, senderType: 'customer' | 'system') {
+    async function sendMessage(ticketId: string, senderType: 'customer' | 'agent') {
+        console.log(`Sending message for ticket ${ticketId} as ${senderType}`);
         try {
-            const response = await fetch('/api/web/message/createFake', {
+            const ticket = filteredTickets.find(t => t.$id === ticketId);
+            if (!ticket) {
+                console.error('Ticket not found:', ticketId);
+                throw new Error('Ticket not found');
+            }
+
+            console.log('Found ticket:', ticket);
+
+            const messagePayload: CreateMessagePayload = {
+                subject: ticket.subject || '',
+                channel: ticket.channel || 'web',
+                content: messageContent,
+                sender_id: senderType === 'customer' ? ticket.customer_id : 'agent_1',
+                sender_name: senderType === 'customer' ? ticket.customer_name : 'Support Agent',
+                sender_type: senderType,
+                ticket_id: ticketId,
+                tenant_id: ticket.tenant_id || 'sample_team',
+                email: ticket.customer_email
+            };
+
+            console.log('Sending message with payload:', messagePayload);
+
+            const response = await fetch(`/api/web/message/${ticket.tenant_id}/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    tenant_id: filteredTickets.find(t => t.$id === ticketId)?.tenant_id,
-                    ticket_id: ticketId,
-                    sender_type: senderType
-                })
+                body: JSON.stringify(messagePayload)
             });
+            
             const data = await response.json();
+            console.log('Received response:', data);
+
             if (!data.success) {
+                console.error('API returned error:', data.error);
                 throw new Error(data.error);
             }
+            console.log('Message sent successfully');
+            messageContent = '';
         } catch (error) {
             console.error('Error sending message:', error);
         }
+    }
+
+    function handleSendMessage() {
+        if (!selectedTicket || !selectedTicketData || !messageContent.trim()) return;
+        sendMessage(selectedTicket, isAgent ? 'agent' : 'customer');
     }
 </script>
 
@@ -303,19 +339,19 @@
                             {#each selectedTicketMessages as message}
                                 <div class="flex {message.sender_type === 'customer' ? 'justify-start' : 'justify-end'}">
                                     <div class="flex items-start max-w-[70%] {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}">
-                                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mx-2">
-                                            <img 
-                                                src={message.sender_type === 'customer' ? '/svg/web.svg' : '/svg/chat-active.svg'} 
-                                                alt="Sender type"
-                                                class="w-4 h-4"
-                                            />
+                                        <div class="flex-shrink-0 w-8 h-8 rounded-full {message.sender_type === 'customer' ? 'bg-blue-100' : 'bg-green-100'} flex items-center justify-center mx-2">
+                                            {#if message.sender_type === 'customer'}
+                                                <span class="text-blue-600 font-medium text-sm">C</span>
+                                            {:else}
+                                                <span class="text-green-600 font-medium text-sm">A</span>
+                                            {/if}
                                         </div>
                                         <div>
                                             <div class="flex items-center space-x-2 mb-1 {message.sender_type === 'customer' ? '' : 'flex-row-reverse space-x-reverse'}">
                                                 <span class="text-sm font-medium text-gray-900">{message.sender_name}</span>
                                                 <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
                                             </div>
-                                            <div class="rounded-2xl px-4 py-2 {message.sender_type === 'customer' ? 'bg-gray-100 text-gray-900' : 'bg-blue-600 text-white'}">
+                                            <div class="rounded-2xl px-4 py-2 {message.sender_type === 'customer' ? 'bg-blue-50 text-blue-900' : 'bg-green-50 text-green-900'}">
                                                 <p class="text-sm whitespace-pre-wrap">{message.content}</p>
                                             </div>
                                         </div>
@@ -331,28 +367,38 @@
 
                     <div class="p-4 bg-white border-t border-gray-200">
                         <div class="flex gap-2 flex-col">
-                            <div class="flex items-center gap-2">
-                                <label class="flex items-center gap-2 text-sm text-gray-700">
-                                    <input 
-                                        type="checkbox" 
-                                        bind:checked={showAiMessages}
-                                        class="form-checkbox h-4 w-4 text-blue-600"
-                                    >
-                                    Show AI Messages
-                                </label>
-                            </div>
-                            <div class="flex gap-2">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm text-gray-600">Sending as:</span>
                                 <button
-                                    class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                                    on:click={() => selectedTicket && sendMessage(selectedTicket, 'customer')}
+                                    class="px-3 py-1 rounded-full text-sm font-medium {isAgent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}"
+                                    on:click={() => isAgent = true}
                                 >
-                                    Reply as Customer
+                                    Agent
                                 </button>
                                 <button
-                                    class="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium"
-                                    on:click={() => selectedTicket && sendMessage(selectedTicket, 'system')}
+                                    class="px-3 py-1 rounded-full text-sm font-medium {!isAgent ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}"
+                                    on:click={() => isAgent = false}
                                 >
-                                    Add System Note
+                                    Customer
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <input
+                                    type="text"
+                                    bind:value={messageContent}
+                                    placeholder="Type your message..."
+                                    class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                    on:keydown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                                />
+                                <button
+                                    class="px-4 py-2 {isAgent ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    on:click={handleSendMessage}
+                                    disabled={!messageContent.trim()}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                                    </svg>
+                                    Send
                                 </button>
                             </div>
                         </div>

@@ -2,7 +2,7 @@
     import { derived } from 'svelte/store';
     import { tickets, messages } from '$lib/utils/realtime';
     import { page } from '$app/stores';
-
+    import type { PageData } from './$types';
     // Get ticket ID from the URL params
     $: ticketId = $page.params.ticketId;
 

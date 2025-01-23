@@ -11,7 +11,7 @@
     onMount(async () => {
         try {
             const { client, databases, account } = createBrowserClient();
-            const user = await account.get();
+          //  const user = await account.get();
             
             // Initialize realtime with server-side data
             unsubscribe = initializeRealtime(
@@ -24,7 +24,10 @@
             console.error('Error initializing realtime:', error);
         }
     });
+    
 
+    
+    
     onDestroy(() => {
         if (unsubscribe) {
             unsubscribe();
