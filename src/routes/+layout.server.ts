@@ -18,6 +18,7 @@ export const load: LayoutServerLoad = async (event) => {
         ]);
         
         return {
+            user: event.locals.user,
             tickets: ticketsResponse.documents,
             messages: messagesResponse.documents,
             ticketCount: ticketsResponse.total,

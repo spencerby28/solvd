@@ -76,6 +76,6 @@ export const actions = {
                 name: name
             });
         }
-        return redirect(302, '/dashboard');
+        return redirect(302, '/');
     }
 } satisfies Actions;

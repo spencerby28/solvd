@@ -76,3 +76,24 @@ export interface CreateMessagePayload {
     attachments?: string[];
     email?: string;
 }
+
+export interface Tenants extends Models.Document {
+    tenant_name: string;
+    user_ids: string[];
+    primary_contact_email: string;
+    business_email_domain: string;
+    billing_email: string;
+    created_at: Date;
+    updated_at: Date;
+    avatar_url?: string;
+    phone_number?: string;
+    subscription_tier?: string;
+    subscription_status?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    timezone?: string;
+    industry?: string;
+    company_size?: number;
+    is_active?: boolean;
+};

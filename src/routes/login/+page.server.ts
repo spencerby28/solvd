@@ -58,6 +58,6 @@ export const actions = {
         }
 
         // Redirect to the dashboard after successful login
-        return redirect(302, '/dashboard');
+        return redirect(302, '/');
     }
 } satisfies Actions;

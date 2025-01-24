@@ -44,6 +44,20 @@ const config: Config = {
 			}
 		},
 		extend: {
+			animation: {
+				rippling: "rippling var(--duration) ease-out",
+			},
+			keyframes: {
+				rippling: {
+					"0%": {
+						opacity: "1",
+					},
+					"100%": {
+						transform: "scale(2)",
+						opacity: "0",
+					},
+				},
+			},
 			colors: {
 				border: "hsl(var(--border) / <alpha-value>)",
 				input: "hsl(var(--input) / <alpha-value>)",

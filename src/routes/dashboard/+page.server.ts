@@ -69,7 +69,7 @@ export async function load({ locals }) {
     }
 
     // Simulate loading delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Return mock data
     return {
