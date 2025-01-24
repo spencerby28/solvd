@@ -1,13 +1,15 @@
 <script lang="ts">
     import { Menu, MenuItem, Toggle } from 'svelte-ux';
     import * as Dropdown from '$lib/components/ui/dropdown-menu';
-    import Badge from '$lib/components/ui/Badge.svelte';
+    import Badge from '$lib/components/primatives/Badge.svelte';
     import { onMount } from 'svelte';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
     //@ts-ignore
 
     import { countryCodeEmoji } from 'country-code-emoji';
     import type { Customers, Tickets } from '$lib/types';
+
+    export let ticket: Tickets | undefined;
 
     // Mock ticket data
     const mockTicket: Tickets = {
@@ -146,7 +148,7 @@
 
     // Helper function to get closed tickets
     function getClosedTickets(): Tickets[] {
-        return getCustomerTickets().filter(t => t.status === 'closed');
+        return getCustomerTickets().filter(t => t.status === 'solved');
     }
 
     // Helper function to calculate ticket duration
@@ -349,7 +351,7 @@
     }
 </style>
 
-<aside class="w-80 bg-gray-100 border-x border-gray-200 shadow-lg relative rounded-tr-3xl flex flex-col">	
+<aside class="w-80 bg-gray-100 border-x border-gray-200 shadow-lg relative rounded-l-3xl flex flex-col h-screen overflow-hidden">	
     <div class="p-4">
         <div class="flex items-start gap-4">
             <div class="w-14 h-14 rounded-xl bg-[#16a34a] bg-opacity-60 flex items-center justify-center relative shrink-0">

@@ -27,7 +27,7 @@
 
     // Get the current user from page data
     $: user = $page.data.user;
-    $: console.log(user);
+   
 
     // Track open state for each navigation item
     let openSections = new Set<string>();
@@ -43,7 +43,7 @@
     $: currentUrl = $page.url.toString();
     $: isActive = (href: string) => {
         // For parent/heading items, check if we're in their section
-        if (href === '/inbox' || href === '/customers' || href === '/analytics' || href === '/helpdesk') {
+        if (href === '/app/inbox/main' || href === '/app/customers' || href === '/app/analytics' || href === '/app/helpdesk') {
             return currentPath.startsWith(href);
         }
 
@@ -108,51 +108,56 @@
         {
             label: 'Inbox',
             icon: 'inbox',
-            href: '/inbox',
+            href: '/app/inbox/main',
             items: [
-                { label: 'All', href: '/inbox' },
+                { label: 'All', href: '/app/inbox/main' },
                 { 
                     label: 'Assigned', 
                     href: '#',
-                    onClick: () => goto(`/inbox?assigned=${user?.$id}`)
+                    onClick: () => goto(`/app/inbox?assigned=${user?.$id}`)
                 },
-                { label: 'Active', href: '/inbox?active=true' },
-                { label: 'Archived', href: '/inbox?archived=true' }
+                { label: 'Active', href: '/app/inbox?active=true' },
+                { label: 'Archived', href: '/app/inbox?archived=true' }
             ]
         },
         {
             label: 'Customers',
             icon: 'users',
-            href: '/customers',
+            href: '/app/customers',
             items: [
-                { label: 'All Customers', href: '/customers' },
-                { label: 'Active', href: '/customers?active=true' },
-                { label: 'Inactive', href: '/customers?active=false' }
+                { label: 'All Customers', href: '/app/customers' },
+                { label: 'Active', href: '/app/customers?active=true' },
+                { label: 'Inactive', href: '/app/customers?active=false' }
             ]
         },
         {
             label: 'Helpdesk',
             icon: 'help-circle',
-            href: '/helpdesk',
+            href: '/app/helpdesk',
             items: [],
         },
         {
             label: 'Analytics',
             icon: 'bar-chart',
-            href: '/analytics',
+            href: '/app/analytics',
             items: [
-                { label: 'Dashboard', href: '/analytics' },
-                { label: 'Reports', href: '/analytics/reports' },
-                { label: 'Metrics', href: '/analytics/metrics' }
+                { label: 'Dashboard', href: '/app/analytics' },
+                { label: 'Reports', href: '/app/analytics/reports' },
+                { label: 'Metrics', href: '/app/analytics/metrics' }
             ]
         }
     ];
 
+//TODO: create separate inboxes on customer level and company levl store index id in appwrite on fetch of customer + the tenant we will set them in layour + url instead of /inbox/main
+
+//TODO: fix bottom so it navs immediatly to section, could have collapsible box up for settings woudl look cool
+//TODO: save the state of the sidebar in local storage
+//TODO FIX LINKS
 </script>
 
 <aside class="flex flex-col h-full border-r border-gray-200 transition-all duration-300 {isCollapsed ? 'w-16' : 'w-56'} relative">
     <!-- Tenant Info - Fixed at top -->
-    <div class="flex-none p-4 border-b border-gray-200">
+    <div class="flex-none p-4  group relative">
         <!-- svelte-ignore a11y_no-static-element-interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <div class="flex items-center gap-3 cursor-pointer" on:click={() => goto('/')}>
@@ -189,9 +194,9 @@
                     <!-- Helpdesk without dropdown -->
                     <a 
                         href={item.href}
-                        class="w-full p-2 flex items-center mb-3 {isActive(item.href) ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg"
+                        class="w-full p-2 flex items-center mb-3 {isActive(item.href) ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg {isCollapsed ? 'justify-center' : ''}"
                     >
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -209,10 +214,10 @@
                     >
                         <div class="w-full">
                             <Collapsible.Trigger 
-                                class="w-full p-2 flex items-center {isActive(item.href) ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg"
+                                class="w-full p-2 flex items-center {isActive(item.href) ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg {isCollapsed ? 'justify-center' : ''}"
                                 on:click={() => goto(item.href)}
                             >
-                                <div class="flex items-center gap-4">
+                                <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         {#if item.icon === 'inbox'}
                                             <path d="M22 12h-6l-2 3h-4l-2-3H2" />
@@ -268,8 +273,8 @@
         <div class="p-4">
             <!-- Settings -->
             <DropdownMenu.Root>
-                <DropdownMenu.Trigger class="w-full p-2 flex items-center justify-between {isActive('/settings') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg" on:click={() => goto('/settings')}>
-                    <div class="flex items-center gap-4">
+                <DropdownMenu.Trigger class="w-full p-2 flex items-center {isCollapsed ? 'justify-center' : 'justify-between'} {isActive('app/settings') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg" on:click={() => goto('/settings')}>
+                    <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3" />
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -289,13 +294,13 @@
 
             <!-- User Profile -->
             <DropdownMenu.Root>
-                <DropdownMenu.Trigger class="w-full  flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 px-1" on:click={() => goto('/user')}>
+                <DropdownMenu.Trigger class="w-full flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 px-1" on:click={() => goto('/user')}>
                     <div class="flex items-center gap-2">
                         {#if user}
                             <img 
                                 src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=16a34a&color=fff`}
                                 alt={user.name}
-                                class="w-8 h-8 rounded-full"
+                                class="w-8 h-8 rounded-full transition-all duration-200"
                             />
                             {#if !isCollapsed}
                                 <div class="flex flex-col items-start" transition:slide|local>
@@ -307,8 +312,8 @@
                     </div>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content>
-                    <DropdownMenu.Item href="/profile">View Profile</DropdownMenu.Item>
-                    <DropdownMenu.Item href="/profile/notifications">Notifications</DropdownMenu.Item>
+                    <DropdownMenu.Item href="app/profile">View Profile</DropdownMenu.Item>
+                    <DropdownMenu.Item href="app/profile/notifications">Notifications</DropdownMenu.Item>
                     <DropdownMenu.Separator />
                     <DropdownMenu.Item class="text-red-600" href="/auth/logout">Sign out</DropdownMenu.Item>
                 </DropdownMenu.Content>

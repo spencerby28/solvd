@@ -3,18 +3,10 @@ import type { Models } from "appwrite";
 export type TicketStatus = 
     // Core
     | 'new'
-    | 'open'
-    | 'pending'
-    | 'resolved'
-    | 'closed'
-    // AI-specific
-    | 'ai_handling'
-    | 'ai_pending'
-    | 'ai_escalated'
-    // Other
+    | 'open' 
+    | 'working'
     | 'escalated'
-    | 'spam'
-    | 'reopened';
+    | 'solved';
 
 export interface Messages extends Models.Document {
     content: string;
