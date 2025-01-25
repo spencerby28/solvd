@@ -1,4 +1,4 @@
-import { Client, Account, Databases } from 'node-appwrite';
+import { Client, Account, Databases, Users, Teams } from 'node-appwrite';
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
 import { APPWRITE_KEY } from '$env/static/private';
 
@@ -19,6 +19,12 @@ export function createAdminClient() {
         },
         get databases() {
             return new Databases(client);
+        },
+        get users() {
+            return new Users(client);
+        },
+        get teams() {
+            return new Teams(client);
         }
     };
 }
@@ -34,6 +40,9 @@ export function createAnonClient() {
         },
         get client() {
             return client;
+        },
+        get account() {
+            return new Account(client);
         }
     };
 }
@@ -50,6 +59,7 @@ export function createSessionClient(event: any) {
     }
 
     client.setSession(session);
+  //  console.log('client', client);
 
     return {
         get account() {

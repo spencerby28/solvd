@@ -1,8 +1,26 @@
 <script lang="ts">
     import type { PageData } from './$types';
+    import { messages } from '$lib/stores/messages';
+    import { page } from '$app/stores';
+    import { derived } from 'svelte/store';
+    import type { Messages } from '$lib/types';
     export let data: PageData;
 
-    //TODO: make header look better and what not here <3
+    // Initialize messages store with server data
+    $: {
+        data.messages.forEach(message => {
+            messages.upsert(message as Messages);
+        });
+    }
+    $: {
+  //      console.log('Customer:', data.customer);
+    }
+
+    // Derive messages for current ticket from the store
+    const ticketMessages = derived([messages, page], ([$messages, $page]) => {
+        const ticketId = $page.params.ticketId;
+        return $messages[ticketId] || [];
+    });
 </script>
 
 <style>
@@ -31,8 +49,8 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-6 space-y-4 hide-scrollbar">
-        {#if data.messages.length > 0}
-            {#each data.messages as message}
+        {#if $ticketMessages.length > 0}
+            {#each $ticketMessages as message}
                 <div class="flex {message.sender_type === 'customer' ? 'justify-start' : 'justify-end'}">
                     <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}">
                         <div class="min-w-0 max-w-full">
@@ -45,10 +63,12 @@
                                     {/if}
                                 </div>
                                 <span class="text-sm font-medium text-gray-900 truncate max-w-[150px]">{message.sender_name}</span>
-                                <span class="text-xs text-gray-500 flex-shrink-0">{new Date(message.$createdAt).toLocaleString()}</span>
                             </div>
-                            <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-gray-100 text-gray-900' : 'bg-blue-600 text-white'} break-words shadow-sm ml-10">
+                            <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-blue-100 text-gray-900' : 'bg-green-100 text-gray-800'} break-words shadow-lg ml-10">
                                 <p class="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                            </div>
+                            <div class="mt-1 {message.sender_type === 'customer' ? 'text-left ml-10' : 'text-right'}">
+                                <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>

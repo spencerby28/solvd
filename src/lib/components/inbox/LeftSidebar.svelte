@@ -1,14 +1,17 @@
 <script lang="ts">
+    
     import { onMount } from 'svelte';
     import { page } from '$app/stores';
     import { slide, fade } from 'svelte/transition';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
     import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-
+    import { Users } from 'lucide-svelte';
     import * as Collapsible from '$lib/components/ui/collapsible';
     import { goto } from '$app/navigation';
- 
+    import ChangeTenant from '$lib/components/modals/ChangeTenant.svelte';
+
     export let isCollapsed = false;
+    
 
     // Mock tenant data
     const tenant = {
@@ -27,6 +30,8 @@
 
     // Get the current user from page data
     $: user = $page.data.user;
+   
+    
    
 
     // Track open state for each navigation item
@@ -147,6 +152,14 @@
             ]
         }
     ];
+
+    // Add these variables to manage the modal state
+    let changeTenantOpen = false;
+    
+    // Function to handle modal state changes
+    function handleChangeTenantOpenChange(open: boolean) {
+        changeTenantOpen = open;
+    }
 
 //TODO: create separate inboxes on customer level and company levl store index id in appwrite on fetch of customer + the tenant we will set them in layour + url instead of /inbox/main
 
@@ -318,9 +331,30 @@
                     <DropdownMenu.Item class="text-red-600" href="/auth/logout">Sign out</DropdownMenu.Item>
                 </DropdownMenu.Content>
             </DropdownMenu.Root>
+
+            <!-- Modify the team switcher button to open the modal instead of navigating -->
+            <button 
+                class="w-full p-2 mb-2 flex items-center {isCollapsed ? 'justify-center' : 'justify-between'} {isActive('/app/teams') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg"
+                on:click={() => changeTenantOpen = true}
+            >
+                <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
+                    <Users class="w-5 h-5" />
+                    {#if !isCollapsed}
+                        <span class="font-bold" transition:slide|local>Switch Team</span>
+                    {/if}
+                </div>
+            </button>
         </div>
     </div>
 </aside>
+
+<!-- Add the modal component just before the closing </aside> tag -->
+<ChangeTenant 
+    open={changeTenantOpen}
+    onOpenChange={handleChangeTenantOpenChange}
+    userId={user?.$id}
+    currentTenant={user?.prefs?.tenantId}
+/>
 
 <style>
     /* Add smooth transitions for width changes */

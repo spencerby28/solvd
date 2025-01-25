@@ -4,36 +4,16 @@
     import Badge from '$lib/components/primatives/Badge.svelte';
     import { onMount } from 'svelte';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
+    import { createBrowserClient } from '$lib/appwrite-browser';
     //@ts-ignore
-
     import { countryCodeEmoji } from 'country-code-emoji';
     import type { Customers, Tickets } from '$lib/types';
 
     export let ticket: Tickets | undefined;
+    let customer: Customers | undefined;
+    let loading = true;
 
-    // Mock ticket data
-    const mockTicket: Tickets = {
-        $id: 'ticket_123',
-        customer_id: 'cust_123',
-        channel: 'email',
-        category: 'support',
-        last_active: new Date(Date.now() - 5 * 60000),
-        customer_name: 'Spencer Byrne',
-        customer_last_seen: new Date(Date.now() - 5 * 60000),
-        customer_locale: 'en-SV',
-        customer_timezone: 'America/New_York',
-        status: 'open',
-        customer_email: 'spencer@spencerbyrne.com',
-        tenant_id: 'tenant_123',
-        priority: 'high',
-        subject: 'Need help with integration',
-        $createdAt: new Date(Date.now() - 4 * 60 * 60000).toISOString(),
-        $updatedAt: new Date(Date.now() - 4 * 60 * 60000).toISOString(),
-        $permissions: [],
-        $databaseId: 'default',
-        $collectionId: 'tickets'
-    };
-    // Mock internal messages
+    // Mock internal messages - keeping these as requested
     const mockInternalMessages = [
         {
             id: 'int_6',
@@ -78,83 +58,6 @@
             type: 'internal'
         }
     ];
-
-    // Mock customer messages
-    const mockMessages = [
-        {
-            id: 'msg_1',
-            content: 'Hi, I\'m having trouble integrating the API. Getting error code 503.',
-            author: 'Spencer Byrne',
-            timestamp: new Date(Date.now() - 300 * 60000).toISOString(), // 5 hours ago
-            type: 'customer'
-        },
-        {
-            id: 'msg_2',
-            content: 'We\'re looking into this issue. Could you provide more details about your implementation?',
-            author: 'Support Team',
-            timestamp: new Date(Date.now() - 240 * 60000).toISOString(), // 4 hours ago
-            type: 'agent'
-        },
-        {
-            id: 'msg_3',
-            content: 'Here\'s my implementation code [code snippet]. It was working fine yesterday.',
-            author: 'Spencer Byrne',
-            timestamp: new Date(Date.now() - 210 * 60000).toISOString(), // 3.5 hours ago
-            type: 'customer'
-        }
-    ];
-
-    
-  
-    // Mock customer data for testing
-    let customer: Customers = {
-        $id: 'cust_123',
-        name: 'Spencer Byrne',
-        email: 'spencer@spencerbyrne.com',
-        locale: 'en-SV',
-        timezone: 'America/New_York',
-        status: 'active',
-        tenant_id: 'tenant_123',
-        instagram_id: undefined,
-        instagram_username: undefined,
-        shopify_id: undefined,
-        tickets: ['ticket_123'],
-        $collectionId: 'customers',
-        $databaseId: 'default',
-        $createdAt: '2024-01-01',
-        $updatedAt: '2024-01-01',
-        $permissions: []
-    };
-
-    // Mock ticket store to simulate database
-    const ticketStore = new Map<string, Tickets>([
-        ['ticket_123', mockTicket]
-    ]);
-
-    // Helper function to get ticket data
-    function getTicket(id: string): Tickets | undefined {
-        return ticketStore.get(id);
-    }
-
-    // Helper function to get all tickets for customer
-    function getCustomerTickets(): Tickets[] {
-        return customer.tickets?.map(id => getTicket(id)).filter((t): t is Tickets => t !== undefined) ?? [];
-    }
-
-    // Helper function to get open tickets
-    function getOpenTickets(): Tickets[] {
-        return getCustomerTickets().filter(t => t.status === 'open');
-    }
-
-    // Helper function to get closed tickets
-    function getClosedTickets(): Tickets[] {
-        return getCustomerTickets().filter(t => t.status === 'solved');
-    }
-
-    // Helper function to calculate ticket duration
-    function getTicketDuration(ticket: Tickets): number {
-        return Math.floor((Date.now() - new Date(ticket.$createdAt).getTime()) / 60000);
-    }
 
     let selectedAssignees = new Set<string>();
     let isAssignDropdownOpen = false;
@@ -226,22 +129,54 @@
 
     let timeInterval: NodeJS.Timeout;
 
-    onMount(() => {
+    // Helper function to calculate ticket duration
+    function getTicketDuration(): number {
+        if (!ticket) return 0;
+        return Math.floor((Date.now() - new Date(ticket.$createdAt).getTime()) / 60000);
+    }
+
+    // Helper function to get open tickets
+    function getOpenTickets(): Tickets[] {
+        if (!ticket) return [];
+        return [ticket].filter(t => t.status === 'open');
+    }
+
+    $: if (ticket) {
+        loading = true;
+        const {databases} = createBrowserClient();
+        databases.getDocument('tickets', 'customers', ticket.customer_id)
+            .then(doc => {
+                console.log('Customer:', doc);
+                customer = doc as unknown as Customers;
+            })
+            .catch(error => {
+                console.error('Error fetching customer:', error);
+            })
+            .finally(() => {
+                loading = false;
+            });
+    }
+
+
+    //@ts-ignore
+    onMount(async () => {
         document.addEventListener('click', handleClickAway);
-        
+
+
+
         // Get current seconds and calculate delay until next minute
         const now = new Date();
         const delay = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
         
         // Initial update
-        userTime = customer.timezone ? formatUserTime(customer.timezone) : '';
+        userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
         
         // Set timeout to sync with minute boundary
         setTimeout(() => {
-            userTime = customer.timezone ? formatUserTime(customer.timezone) : '';
+            userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
             // Start interval once synced
             timeInterval = setInterval(() => {
-                userTime = customer.timezone ? formatUserTime(customer.timezone) : '';
+                userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
             }, 60000);
         }, delay);
 
@@ -315,9 +250,9 @@
         return 'text-red-500';
     }
 
-    $: userTime = customer.timezone ? formatUserTime(customer.timezone) : '';
-    $: languageName = customer.locale ? getLanguageName(customer.locale) : '';
-    $: countryName = customer.locale ? getCountryName(customer.locale) : '';
+    $: userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
+    $: languageName = customer?.locale ? getLanguageName(customer.locale) : '';
+    $: countryName = customer?.locale ? getCountryName(customer.locale) : '';
 </script>
 
 <style>
@@ -363,43 +298,57 @@
                 ></div>
             </div>
             <div class="min-w-0 flex-1">
-                <p class="text-2xl font-bold truncate">{customer.name}</p>
-                <p class="text-sm text-gray-600  truncate">{customer.email || 'No email provided'}</p>
+                {#if loading}
+                    <div class="space-y-2">
+                        <div class="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+                        <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                {:else}
+                    <p class="text-2xl font-bold truncate">{customer?.name}</p>
+                    <p class="text-sm text-gray-600 truncate">{customer?.email || 'No email provided'}</p>
+                {/if}
             </div>
         </div>
 
         <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-[auto_1fr] gap-x-6 gap-y-3">
-            {#if customer.timezone}
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <div class="w-8 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-[18px] h-[18px] text-gray-700">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <span class="font-medium text-gray-700">{userTime}</span>
+            {#if loading}
+                <div class="col-span-2 space-y-4">
+                    <div class="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+                    <div class="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
                 </div>
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <div class="w-8 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-[18px] h-[18px] text-gray-700">
-                            <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
-                        </svg>
+            {:else}
+                {#if customer?.timezone}
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <div class="w-8 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-[18px] h-[18px] text-gray-700">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <span class="font-medium text-gray-700">{userTime}</span>
                     </div>
-                    <span class="text-gray-700">{formatTimezone(customer.timezone)}</span>
-                </div>
-            {/if}
-            {#if customer.locale}
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <div class="w-8 flex items-center justify-center">
-                        <span class="text-base font-semibold text-gray-700">Aa</span>
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <div class="w-8 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-[18px] h-[18px] text-gray-700">
+                                <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
+                            </svg>
+                        </div>
+                        <span class="text-gray-700">{formatTimezone(customer.timezone)}</span>
                     </div>
-                    <span class="font-medium text-gray-700">{languageName}</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <div class="w-8 flex items-center justify-center">
-                        <span class="text-xl">{countryCodeEmoji(customer.locale.split('-')[1])}</span>
+                {/if}
+                {#if customer?.locale}
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <div class="w-8 flex items-center justify-center">
+                            <span class="text-base font-semibold text-gray-700">Aa</span>
+                        </div>
+                        <span class="font-medium text-gray-700">{languageName}</span>
                     </div>
-                    <span class="text-gray-700">{countryName}</span>
-                </div>
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <div class="w-8 flex items-center justify-center">
+                            <span class="text-xl">{countryCodeEmoji(customer.locale.split('-')[1])}</span>
+                        </div>
+                        <span class="text-gray-700">{countryName}</span>
+                    </div>
+                {/if}
             {/if}
         </div>
 
@@ -550,7 +499,7 @@
 
     <!-- Connected Accounts -->
     <div class="p-4 border-t border-gray-200">
-        {#if !customer.instagram_username && !customer.shopify_id}
+        {#if !customer?.instagram_username && !customer?.shopify_id}
             <Dropdown.Root bind:open={isConnectAccountsDropdownOpen}>
                 <Dropdown.Trigger class="w-full py-2 px-3 text-sm bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2 text-gray-500">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
@@ -662,15 +611,11 @@
         <div class="grid grid-cols-2 gap-3">
             <div class="bg-white p-3 rounded-lg border border-gray-200">
                 <div class="flex flex-col items-center">
-                    {#if getOpenTickets().length > 0}
-                        {@const oldestOpenTicket = getOpenTickets().reduce((oldest, ticket) => 
-                            new Date(ticket.$createdAt) < new Date(oldest.$createdAt) ? ticket : oldest
-                        )}
-                        {@const duration = getTicketDuration(oldestOpenTicket)}
-                        <p class="text-lg font-bold text-gray-900">{formatDuration(duration)}</p>
-                        <span class="text-xs text-gray-500 font-medium">OPEN TIME</span>
+                    {#if loading}
+                        <div class="h-7 w-16 bg-gray-200 rounded animate-pulse"></div>
+                        <span class="text-xs text-gray-500 font-medium mt-1">OPEN TIME</span>
                     {:else}
-                        <p class="text-lg font-bold text-gray-900">0m</p>
+                        <p class="text-lg font-bold text-gray-900">{formatDuration(getTicketDuration())}</p>
                         <span class="text-xs text-gray-500 font-medium">OPEN TIME</span>
                     {/if}
                 </div>
@@ -707,7 +652,9 @@
                     <div class="w-4 h-4 rounded-full bg-blue-500 relative z-10"></div>
                     <div class="min-w-0 flex-1">
                         <p class="text-sm font-medium text-gray-900">Ticket Created</p>
-                        <p class="text-xs text-gray-500">{new Date(mockTicket.$createdAt).toLocaleDateString()}</p>
+                        {#if ticket?.$createdAt}
+                            <p class="text-xs text-gray-500">{new Date(ticket.$createdAt).toLocaleDateString()}</p>
+                        {/if}
                     </div>
                 </div>
             </div>

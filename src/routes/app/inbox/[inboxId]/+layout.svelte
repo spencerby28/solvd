@@ -10,14 +10,55 @@
     import Badge from '$lib/components/primatives/Badge.svelte';
     import { goto } from '$app/navigation';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
-
+    import type { LayoutData } from './$types';
+    import { selectedTicket } from '$lib/stores/selectedTicket';
     let messageContent = '';
     let isAgent = true;
 
-    function handleSendMessage() {
+    $: console.log($selectedTicket);
+
+    export let data: LayoutData;
+
+    async function handleSendMessage() {
+        console.log(messageContent);
         if (!messageContent.trim()) return;
-        // TODO: Implement message sending logic
-        messageContent = '';
+        
+        try {
+            const ticketId = $selectedTicket?.$id;
+            const ticket = $tickets.find(t => t.$id === ticketId);
+            console.log(ticket);
+            
+            if (!ticket) {
+                throw new Error('Ticket not found');
+            }
+
+            const response = await fetch(`/api/web/message/${ticket.tenant_id}/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: messageContent,
+                    ticket_id: ticketId,
+                    sender_type: isAgent ? 'agent' : 'customer',
+                    channel: ticket.channel,
+                    subject: ticket.subject || '',
+                    sender_id: data.user?.$id || '',
+                    customer_id: ticket.customer_id,
+                    sender_name: data.user?.name || '',
+                    tenant_id: ticket.tenant_id,
+                    email: ticket.customer_email
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
+
+            messageContent = '';
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
     }
 
     function toggleSenderType() {
@@ -76,11 +117,11 @@
     <div class="w-[400px] flex-shrink-0 border-r border-gray-200 overflow-y-auto hide-scrollbar">
         <div class="mr-4 ml-3">
             <div class="sticky top-0 bg-white z-10 py-4 ">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between">
                     <Dropdown.Root bind:open={isOpen}>
-                        <Dropdown.Trigger class="py-2 px-3 text-sm bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2 text-gray-500">
+                        <Dropdown.Trigger class={`py-2 px-3 text-sm bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2 ${activeFilters.length > 0 ? 'text-green-600 border-green-200 bg-green-50' : 'text-gray-500'}`}>
                             <Filter class="h-4 w-4" />
-                            <span>Filter</span>
+                            <span>Filter{activeFilters.length > 0 ? ` (${activeFilters.length})` : ''}</span>
                         </Dropdown.Trigger>
                         <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg mt-1">
                             <Dropdown.Item class="px-3 py-2 text-sm cursor-pointer flex items-center gap-2 justify-between" on:click={() => applyFilter('filter', 'recent')}>
@@ -126,25 +167,15 @@
                         </Dropdown.Content>
                     </Dropdown.Root>
 
-                    {#if activeFilters.length > 0}
-                        <div class="flex-1 flex items-center justify-between px-3 py-2 border border-gray-200 rounded-sm">
-                            <span class="text-xs text-gray-500 uppercase tracking-wider">Active</span>
-                            <div class="flex gap-2">
-                                {#each activeFilters as [key, value]}
-                                    <button 
-                                        class="group" 
-                                        on:click={() => applyFilter(key, value)}
-                                    >
-                                        <Badge 
-                                            text={`${value.toUpperCase()} `} 
-                                            color={statuses.find(s => s.value.toLowerCase() === value.toLowerCase())?.color || '#64748b'}
-                                            onXClick={() => applyFilter(key, value)}
-                                        />
-                                    </button>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
+                    <RippleButton 
+                        class="p-2 rounded-lg border hover:bg-green-800 bg-green-600 border-white"
+                        rippleColor="#16a34a"
+                        duration="300ms"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" class="w-5 h-5 text-gray-500">
+                            <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                        </svg>
+                    </RippleButton>
                 </div>
             </div>
 
@@ -244,17 +275,20 @@
                         class="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm min-h-[40px] outline-none transition-shadow duration-200"
                         on:keydown={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     />
-                    <RippleButton 
-                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        on:click={handleSendMessage}
-                        disabled={!messageContent.trim()}
-                        rippleColor="#166534"
-                        duration="1000ms"
-                    >
+                    <div on:click={handleSendMessage}>
+                        <RippleButton 
+                            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            on:click={handleSendMessage}
+                            disabled={!messageContent.trim()}
+                            rippleColor="#166534"
+                            duration="1000ms"
+                        >
+                    
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
                         </svg>
                     </RippleButton>
+                </div>
                 </div>
             </div>
         </div>

@@ -24,3 +24,21 @@ export function createBrowserClient() {
         }
     };
 } 
+
+export function createAnonClient() {
+    const client = new Client()
+        .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
+        .setProject(PUBLIC_APPWRITE_PROJECT);
+
+    return {
+        get databases() {
+            return new Databases(client);
+        },
+        get client() {
+            return client;
+        },
+        get account() {
+            return new Account(client);
+        }
+    };
+}

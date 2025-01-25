@@ -4,17 +4,29 @@
     import type { TicketStatus } from '$lib/types';
     import Badge from '$lib/components/primatives/Badge.svelte';
     import * as Dropdown from '$lib/components/ui/dropdown-menu';
+    import { selectedTicket } from '$lib/stores/selectedTicket';
 
     export let ticket: TicketDocument;
 
     $: isSelected = $page.params.ticketId === ticket.$id;
+    $: {
+        if (isSelected) {
+            selectedTicket.set(ticket);
+        }
+    }
     const inboxId = $page.params.inboxId;
     $: queryParams = $page.url.searchParams.toString();
     console.log(queryParams);
 
     function getTimeAgo(date: Date | string): string {
         const dateObj = typeof date === 'string' ? new Date(date) : date;
-        const hours = Math.floor((Date.now() - dateObj.getTime()) / (1000 * 60 * 60));
+        const diffMs = Date.now() - dateObj.getTime();
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor(diffMs / (1000 * 60));
+
+        if (hours < 1) {
+            return `${minutes}m ago`;
+        }
         if (hours < 24) {
             return `${hours}h ago`;
         }
@@ -43,7 +55,7 @@
 
 <a 
     href={`/app/inbox/${inboxId}/${ticket.$id}${queryParams ? '?' + queryParams : ''}`}
-    class="block  pl-1 pr-3 py-3 mt-2 hover:bg-blue-50 border-b border-gray-200  cursor-pointer rounded-lg border-l-4 {isSelected ? 'border-l-blue-500 bg-blue-100' : 'border-l-transparent'}"
+    class="block  pl-1 pr-3 py-3 mt-2 hover:bg-blue-50 border border-gray-200  cursor-pointer rounded-lg border-l-4 {isSelected ? 'border-l-blue-500 bg-blue-100' : ''}"
     on:mouseenter={() => showDropdown = true}
     on:mouseleave={() => showDropdown = false}
 >
@@ -51,11 +63,14 @@
         <div class="flex items-center">
             <div class="w-8 h-8 rounded-lg flex items-center justify-center">
                 {#if ticket.channel === 'web'}
+
                     <img src="/svg/web.svg" alt="Web" class="w-4 h-4" />
                 {:else if ticket.channel === 'email'}
                     <img src="/svg/email.svg" alt="Email" class="w-4 h-4" />
                 {:else if ticket.channel === 'instagram'}
                     <img src="/svg/instagram.svg" alt="Instagram" class="w-4 h-4" />
+                {:else if ticket.channel === 'chat' || ticket.channel === 'whatsapp'}
+                    <img src="/svg/chat-active.svg" alt="Chat" class="w-4 h-4" />
                 {/if}
             </div>
             <span class="text-sm text-gray-500 ml-1">
@@ -107,7 +122,7 @@
     </div>
 
     <div class="flex justify-between items-start">
-        <h3 class="font-medium text-gray-900 text-sm truncate pr-2">
+        <h3 class="font-medium text-gray-900 text-sm truncate ml-2">
             {ticket.subject || 'No Subject'}
         </h3>
         <Badge text={ticket.status?.toUpperCase()} color={statusColors[ticket.status?.toUpperCase() || ''] || 'gray'} />

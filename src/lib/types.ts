@@ -13,7 +13,7 @@ export interface Messages extends Models.Document {
     sender_id: string;
     sender_name: string;
     sender_type: string;
-    source: string;
+    channel: string;
     ticket_id: string;
     tenant_id: string;
     attachments?: string[];
@@ -21,8 +21,30 @@ export interface Messages extends Models.Document {
     edited?: boolean;
     email_message_id?: string;
     email?: string;
-    instagram_message_id?: string;
-};
+    subject?: string;
+    is_welcome?: boolean;
+}
+
+export interface ChatSessions extends Models.Document {
+    session_id: string;
+    tenant_id: string;
+    status: string;
+    last_activity: Date;
+    customer_id?: string;
+    ticket_id?: string;
+    current_category?: string;
+    browser?: string;
+    platform?: string;
+    ip_address?: string;
+}
+
+export interface Presence extends Models.Document {
+    session_id: string;
+    tenant_id: string;
+    status: string;
+    last_ping: Date;
+    customer_id?: string;
+}
 
 export interface Tickets extends Models.Document {
     customer_id: string;
@@ -41,8 +63,14 @@ export interface Tickets extends Models.Document {
     tenant_id?: string;
     priority?: string;
     status?: TicketStatus;
+    email_thread_id?: string;
     customer_email?: string;
-};
+    pinned?: boolean;
+    last_message?: string;
+    replied?: boolean;
+    converted?: boolean;
+}
+
 export interface Customers extends Models.Document {
     name: string;
     locale: string;
@@ -54,13 +82,14 @@ export interface Customers extends Models.Document {
     instagram_username?: string;
     shopify_id?: string;
     tickets?: string[];
-};
+}
 
 export interface CreateMessagePayload {
     subject: string;
     channel: string;
     content: string;
     sender_id: string;
+    customer_id: string;
     sender_name: string;
     sender_type: 'customer' | 'system' | 'ai' | 'agent';
     ticket_id: string;
@@ -88,4 +117,8 @@ export interface Tenants extends Models.Document {
     industry?: string;
     company_size?: number;
     is_active?: boolean;
-};
+}
+export interface HelpType {
+    type: 'order' | 'product' | 'returns' | 'help';
+    content: string;
+}

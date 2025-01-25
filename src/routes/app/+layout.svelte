@@ -48,7 +48,7 @@
 
 <div class="flex h-screen">
 	<!-- Left Sidebar -->
-	<LeftSidebar bind:isCollapsed={$isSidebarCollapsed} />
+	<LeftSidebar  bind:isCollapsed={$isSidebarCollapsed} />
 
 	<!-- Main content -->
 	<main class="flex-1">

@@ -1,3 +1,12 @@
+
+<script lang="ts">
+    import type { PageData } from './$types';
+    export let data: PageData;
+    
+    $: console.log('Current user:', data.user);
+</script>
+
+
 <div class="p-8">
     <h1 class="text-4xl font-extrabold text-green-600 mb-8">Welcome to Solvd</h1>
 

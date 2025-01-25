@@ -16,6 +16,7 @@ export async function POST({ request }) {
 
 	// Get ticket data from request
 	const { ticketId, messages, recipient, subject, tenantId } = await request.json();
+	console.log(ticketId, messages, recipient, subject, tenantId);
 
 	// Generate tenant name from tenantId
 	let tenantName = tenantId;
@@ -31,7 +32,7 @@ export async function POST({ request }) {
 	//@ts-ignore
 	const { html, text } = await renderEmail(Hello, { messages, ticketId, ticketSubject: subject, tenantId, tenantName });
 
-
+	
 	const RECIPIENT = recipient;
 	const SENDER = `${tenantName} Customer Support <${tenantId}@getsolvd.xyz>`;
 	const TICKET_SPECIFIC_ADDRESS = `${tenantName} Customer Support <${ticketId}-${tenantId}@getsolvd.xyz>`;
