@@ -322,6 +322,7 @@
         </div>
 
         <!-- Collapse button -->
+        <!-- svelte-ignore a11y_consider_explicit_label -->
         <button 
             class="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg absolute transition-all duration-300 opacity-0 group-hover:opacity-100 {isCollapsed ? 'left-[-12px] top-4' : 'left-4 top-4'}"
             on:click={() => isCollapsed = !isCollapsed}
@@ -414,12 +415,16 @@
                 <div class="flex flex-wrap gap-2" transition:slide|local>
                     {#each Array.from(selectedAssignees) as assigneeName}
                         {@const assignee = assignees.find(a => a.name === assigneeName)}
+                        <!-- svelte-ignore a11y_label_has_required_name -->
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <div 
                             class="assignee-tag group flex items-center text-center transition-all duration-300 {expandedAssignee === assigneeName ? 'pr-7' : ''} relative bg-white text-gray-900 font-medium px-3 py-1.5 rounded-md text-sm border cursor-pointer" 
                             style="border-color: {assignee?.color || '#16a34a'}"
                             on:click={(e) => handleTagClick(assigneeName, e)}
                         >
                             <span class="mx-auto">{assigneeName}</span>
+                            <!-- svelte-ignore a11y_consider_explicit_label -->
                             <button 
                                 class="absolute right-2 transition-all duration-300 {expandedAssignee === assigneeName ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}"
                                 on:click={(e) => {
@@ -582,6 +587,8 @@
                 </Dropdown.Root>
             {:else}
                 <div class="flex justify-center">
+                    
+                    <!-- svelte-ignore a11y_consider_explicit_label -->
                     <button class="p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-gray-500">
                             <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />

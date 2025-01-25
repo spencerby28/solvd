@@ -7,12 +7,36 @@
     import { writable, get } from 'svelte/store';
     import { inboxActions } from '$lib/stores/inboxActions';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
+    import { selectedTicket } from '$lib/stores/selectedTicket';
+    import type { TicketStatus } from '$lib/types';
     export let data: PageData;
 
     const tenantId = data.user?.prefs.tenantId;
-    // Get edit mode state from layout
-    const isEditMode = writable(false);
-    let selectedMessageForEdit: Messages | null = null;
+    
+    // Ticket status options matching TicketListItem
+    const statusOptions = [
+        { value: 'NEW', label: 'New', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+        { value: 'OPEN', label: 'Open', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+        { value: 'WORKING', label: 'Working', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+        { value: 'ESCALATED', label: 'Escalated', color: 'bg-red-100 text-red-800 border-red-200' },
+        { value: 'SOLVD', label: 'Solvd', color: 'bg-green-100 text-green-800 border-green-200' }
+    ];
+
+    let isStatusDropdownOpen = false;
+    
+    // Initialize currentStatus from ticket data
+    $: currentStatus = statusOptions.find(status => status.value === data.ticket?.status) || statusOptions[0];
+
+    function toggleStatusDropdown() {
+        isStatusDropdownOpen = !isStatusDropdownOpen;
+    }
+
+    function handleStatusChange(status: typeof statusOptions[0]) {
+        // TODO: Implement status update functionality
+        console.log('Status changed to:', status.value);
+        isStatusDropdownOpen = false;
+    }
+
     let editContent = '';
 
     function handleEditMessage(message: Messages) {
@@ -124,14 +148,47 @@
 </style>
 
 <div class="h-full w-full flex flex-col hide-scrollbar">
-    <div class="sticky top-0 bg-white shadow-sm p-4 z-1">
+    <div class="sticky top-0 bg-white shadow-sm p-4 z-10">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-medium text-gray-900">Ticket Details</h2>
-            {#if $inboxActions.isEditMode}
-                <span class="px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md border border-green-200">
-                    Edit Mode
-                </span>
-            {/if}
+            <div class="flex items-center gap-4">
+                {#if $inboxActions.isEditMode}
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md border border-green-200">
+                        Edit Mode
+                    </span>
+                {/if}
+                
+                <div class="relative">
+                    <!-- Status Badge/Button -->
+                    <button
+                        on:click={toggleStatusDropdown}
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-md {currentStatus.color} border text-sm font-medium"
+                    >
+                        {currentStatus.label}
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Status Dropdown -->
+                    {#if isStatusDropdownOpen}
+                        <div class="absolute right-0 my-2  w-fit min-w-[100px] rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                            <div class="py-1 px-2 space-y-2 flex flex-col " role="menu">
+                                {#each statusOptions as status}
+                                    <button
+                                        on:click={() => handleStatusChange(status)}
+                                        class="w-full text-left px-3 py-1 text-sm rounded-md {status.color} hover:opacity-80 transition-opacity"
+                                    >
+                                        {status.label}
+                                    </button>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+
+
+            </div>
         </div>
     </div>
 
@@ -170,7 +227,7 @@
                             </div>
                             <div class="mt-1 flex items-center gap-2 {message.sender_type === 'customer' ? 'ml-10' : 'flex-row-reverse'}">
                                 <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
-                                {#if $inboxActions.selectedMessageId === message.$id}
+                                {#if $inboxActions.selectedMessageId === message.$id && $inboxActions.isEditMode}
                                     <div on:click={handleSubmitEdit}>
                                         <RippleButton
                                             class="px-2 py-0.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md"

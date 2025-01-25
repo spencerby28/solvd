@@ -71,9 +71,35 @@
         isAgent = !isAgent;
     }
 
-    $: currentTickets = [...$tickets].sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime());
-    $: loading = currentTickets.length === 0;
-    $: activeFilters = Array.from($page.url.searchParams.entries());
+    $: activeFilters = Array.from($page.url.searchParams.getAll('filter'));
+
+    $: currentTickets = (() => {
+        let filtered = [...$tickets];
+
+        // Apply status filters
+        const statusFilters = activeFilters.filter(f => 
+            ['new', 'open', 'working', 'escalated', 'solvd'].includes(f)
+        );
+        if (statusFilters.length > 0) {
+            filtered = filtered.filter(ticket => 
+                statusFilters.includes(ticket.status?.toLowerCase() || '')
+            );
+        }
+
+        // Apply sorting filters
+        if (activeFilters.includes('recent')) {
+            filtered.sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime());
+        } else if (activeFilters.includes('longest')) {
+            filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        } else {
+            // Default sort by last_active
+            filtered.sort((a, b) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime());
+        }
+
+        return filtered;
+    })();
+
+    $: loading = $tickets.length === 0;
 
     const statuses = [
         { label: 'NEW', value: 'NEW', color: '#7c3aed' },

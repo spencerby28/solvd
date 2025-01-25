@@ -55,15 +55,31 @@
 
 <a 
     href={`/app/inbox/${inboxId}/${ticket.$id}${queryParams ? '?' + queryParams : ''}`}
-    class="block  pl-1 pr-3 py-3 mt-2 hover:bg-blue-50 border border-gray-200  cursor-pointer rounded-lg border-l-4 {isSelected ? 'border-l-blue-500 bg-blue-100' : ''}"
+    class="block pl-1 pr-3 py-3 mt-2 border border-gray-200 cursor-pointer rounded-lg border-l-4 border-r-4 relative overflow-hidden transition-colors"
+    style="
+        border-left-color: {isSelected ? statusColors[ticket.status?.toUpperCase() || 'NEW'] : '#e5e7eb'};
+        border-right-color: {isSelected ? statusColors[ticket.status?.toUpperCase() || 'NEW'] : statusColors[ticket.status?.toUpperCase() || 'NEW']};
+        background-color: {isSelected ? statusColors[ticket.status?.toUpperCase() || 'NEW'] + '10' : showDropdown ? statusColors[ticket.status?.toUpperCase() || 'NEW'] + '10' : 'transparent'};
+    "
     on:mouseenter={() => showDropdown = true}
     on:mouseleave={() => showDropdown = false}
 >
+    <div 
+        class="absolute top-0 right-0 bottom-0 w-12 pointer-events-none"
+        style="background: linear-gradient(to left, {statusColors[ticket.status?.toUpperCase() || 'NEW']}20 0%, transparent 100%)"
+    ></div>
+
+    {#if isSelected}
+        <div 
+            class="absolute top-0 left-0 bottom-0 w-12 pointer-events-none"
+            style="background: linear-gradient(to right, {statusColors[ticket.status?.toUpperCase() || 'NEW']}20 0%, transparent 100%)"
+        ></div>
+    {/if}
+
     <div class="flex justify-between items-center mb-1">
         <div class="flex items-center">
             <div class="w-8 h-8 rounded-lg flex items-center justify-center">
                 {#if ticket.channel === 'web'}
-
                     <img src="/svg/web.svg" alt="Web" class="w-4 h-4" />
                 {:else if ticket.channel === 'email'}
                     <img src="/svg/email.svg" alt="Email" class="w-4 h-4" />
@@ -77,9 +93,9 @@
                 {ticket.customer_name}
             </span>
         </div>
-        <div class="relative">
+        <div class="relative flex items-center h-full">
             {#if !showDropdown && !isDropdownOpen}
-                <span class="text-xs text-gray-400">
+                <span class="text-xs text-gray-400 flex items-center">
                     {getTimeAgo(ticket.last_active)}
                 </span>
             {:else}
@@ -125,6 +141,5 @@
         <h3 class="font-medium text-gray-900 text-sm truncate ml-2">
             {ticket.subject || 'No Subject'}
         </h3>
-        <Badge text={ticket.status?.toUpperCase()} color={statusColors[ticket.status?.toUpperCase() || ''] || 'gray'} />
     </div>
 </a>

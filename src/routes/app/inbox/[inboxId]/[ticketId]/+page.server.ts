@@ -46,7 +46,7 @@ export const load: PageServerLoad = async (event) => {
 
         return {
             messages: allMessages,
-           // customer
+            ticket: ticket
         };
     } catch (err: unknown) {
         console.error('Error fetching messages:', err);
