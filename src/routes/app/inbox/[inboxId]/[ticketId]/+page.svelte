@@ -4,7 +4,87 @@
     import { page } from '$app/stores';
     import { derived } from 'svelte/store';
     import type { Messages } from '$lib/types';
+    import { writable, get } from 'svelte/store';
+    import { inboxActions } from '$lib/stores/inboxActions';
+    import RippleButton from '$lib/components/primatives/RippleButton.svelte';
     export let data: PageData;
+
+    const tenantId = data.user?.prefs.tenantId;
+    // Get edit mode state from layout
+    const isEditMode = writable(false);
+    let selectedMessageForEdit: Messages | null = null;
+    let editContent = '';
+
+    function handleEditMessage(message: Messages) {
+        if (!$inboxActions.isEditMode || (message.sender_type !== 'agent' && message.sender_type !== 'ai')) return;
+        editContent = message.content;
+        inboxActions.setSelectedMessage(message.$id);
+        // Allow the textarea to update before adjusting height
+        setTimeout(() => {
+            const textarea = document.querySelector(`textarea[data-message-id="${message.$id}"]`) as HTMLTextAreaElement;
+            if (textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            }
+        }, 0);
+    }
+
+    function adjustTextareaHeight(event: Event) {
+        const textarea = event.target as HTMLTextAreaElement;
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    async function handleSubmitEdit() {
+        console.log('[Message Edit] Starting edit submission');
+        if (!$inboxActions.selectedMessageId || !editContent.trim()) {
+            console.warn('[Message Edit] Missing required fields');
+            return;
+        }
+        
+        try {
+            // Immediately update local state
+            const messageToUpdate = $messages[$page.params.ticketId]?.find(m => m.$id === $inboxActions.selectedMessageId);
+            if (messageToUpdate) {
+                const updatedMessage = { ...messageToUpdate, content: editContent };
+                messages.upsert(updatedMessage);
+            }
+
+            console.log('[Message Edit] Sending edit request', {
+                messageId: $inboxActions.selectedMessageId,
+                content: editContent
+            });
+
+            const response = await fetch(`/api/web/message/${tenantId}/edit`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messageId: $inboxActions.selectedMessageId,
+                    content: editContent
+                })
+            });
+
+            if (!response.ok) {
+                console.error('[Message Edit] Server returned error response:', response.status);
+                throw new Error('Failed to update message');
+            }
+
+            const updatedMessage = await response.json();
+            console.log('[Message Edit] Successfully updated message:', updatedMessage);
+            messages.upsert(updatedMessage);
+            
+            // Reset edit state
+            console.log('[Message Edit] Resetting edit state');
+            editContent = '';
+            inboxActions.setSelectedMessage(null);
+            inboxActions.toggleEditMode();
+
+        } catch (error) {
+            console.error('[Message Edit] Error updating message:', error);
+        }
+    }
 
     // Initialize messages store with server data
     $: {
@@ -45,14 +125,26 @@
 
 <div class="h-full w-full flex flex-col hide-scrollbar">
     <div class="sticky top-0 bg-white shadow-sm p-4 z-1">
-        <h2 class="text-lg font-medium text-gray-900">Ticket Details</h2>
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-medium text-gray-900">Ticket Details</h2>
+            {#if $inboxActions.isEditMode}
+                <span class="px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-md border border-green-200">
+                    Edit Mode
+                </span>
+            {/if}
+        </div>
     </div>
 
     <div class="flex-1 overflow-y-auto p-6 space-y-4 hide-scrollbar">
         {#if $ticketMessages.length > 0}
             {#each $ticketMessages as message}
                 <div class="flex {message.sender_type === 'customer' ? 'justify-start' : 'justify-end'}">
-                    <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}">
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}"
+                        class:cursor-pointer={$inboxActions.isEditMode && (message.sender_type === 'agent' || message.sender_type === 'ai')}
+                        on:click={() => handleEditMessage(message)}
+                    >
                         <div class="min-w-0 max-w-full">
                             <div class="flex items-center space-x-2 mb-1 {message.sender_type === 'customer' ? '' : 'flex-row-reverse space-x-reverse'}">
                                 <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
@@ -65,10 +157,30 @@
                                 <span class="text-sm font-medium text-gray-900 truncate max-w-[150px]">{message.sender_name}</span>
                             </div>
                             <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-blue-100 text-gray-900' : 'bg-green-100 text-gray-800'} break-words shadow-lg ml-10">
-                                <p class="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                {#if $inboxActions.selectedMessageId === message.$id}
+                                    <textarea
+                                        bind:value={editContent}
+                                        data-message-id={message.$id}
+                                        class="max-w-[400px] min-w-[325px] bg-transparent text-sm whitespace-pre-wrap break-words focus:ring-2 focus:ring-green-600 focus:outline-none border-none p-0 m-0 resize-none rounded-sm"
+                                        on:input={adjustTextareaHeight}
+                                    >{message.content}</textarea>
+                                {:else}
+                                    <p class="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                {/if}
                             </div>
-                            <div class="mt-1 {message.sender_type === 'customer' ? 'text-left ml-10' : 'text-right'}">
+                            <div class="mt-1 flex items-center gap-2 {message.sender_type === 'customer' ? 'ml-10' : 'flex-row-reverse'}">
                                 <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
+                                {#if $inboxActions.selectedMessageId === message.$id}
+                                    <div on:click={handleSubmitEdit}>
+                                        <RippleButton
+                                            class="px-2 py-0.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md"
+                                            rippleColor="#16a34a"
+                                            duration="500ms"
+                                        >
+                                            Submit
+                                        </RippleButton>
+                                    </div>
+                                {/if}
                             </div>
                         </div>
                     </div>

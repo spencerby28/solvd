@@ -49,7 +49,7 @@ def generate_fake_data():
 
     try:
         # Create team with proper roles
-        team_id = tenant_name.lower().replace(" ", "_")[:36]  # Ensure valid team ID format and length
+        team_id = tenant_name.lower().replace(" ", "_")  # Use tenant name as team ID
         team = teams.create(
             team_id=team_id,
             name=tenant_name[:128],  # Ensure name within max length
@@ -57,7 +57,7 @@ def generate_fake_data():
         )
         
         # Generate and create tenant data
-        tenant_id = ID.unique()
+        tenant_id = tenant_name.lower().replace(" ", "_")  # Use tenant name as tenant ID
         tenant = {
             "tenant_name": tenant_name,
             "user_ids": [ID.unique() for _ in range(3)],
@@ -94,7 +94,7 @@ def generate_fake_data():
         # Generate and create customers
         customers = []
         for _ in range(num_customers):
-            customer_id = ID.unique()
+            customer_id = tenant_id + "_customer_" + str(len(customers) + 1)
             customer = {
                 "name": fake.name(),
                 "locale": fake.locale().replace('_', '-'),
@@ -104,7 +104,7 @@ def generate_fake_data():
                 "email": fake.email(),
                 "instagram_id": customer_id,
                 "instagram_username": fake.user_name(),
-                "shopify_id": ID.unique(),
+                "shopify_id": tenant_id + "_shopify_" + str(len(customers) + 1),
                 "tickets": []
             }
             
@@ -134,7 +134,7 @@ def generate_fake_data():
         for _ in range(num_tickets):
             customer = random.choice(customers)
             channel = random.choice(channels)
-            ticket_id = ID.unique()
+            ticket_id = tenant_id + "_ticket_" + str(len(tickets) + 1)
             
             ticket = {
                 "customer_id": customer["instagram_id"],
@@ -175,7 +175,7 @@ def generate_fake_data():
             num_messages = random.randint(1, num_messages_per_ticket * 2)
             ticket_messages = []
             for _ in range(num_messages):
-                message_id = ID.unique()
+                message_id = tenant_id + "_message_" + str(len(messages) + 1)
                 sender_type = random.choice(["customer", "agent"])
                 message = {
                     "content": fake.paragraph(),

@@ -15,14 +15,10 @@ export const load: LayoutServerLoad = async (event) => {
 
         // Get recent/pinned tickets
         const recentTickets = await databases.listDocuments('tickets', 'tickets', [
-            Query.limit(5),
+            Query.limit(100),
             Query.orderDesc('$createdAt')
         ]);
 
-        const pinnedTickets = await databases.listDocuments('tickets', 'tickets', [
-            Query.equal('pinned', true),
-            Query.limit(10)
-        ]);
 
         // Get most recent messages for tickets
         const messages = await databases.listDocuments('tickets', 'messages', [
@@ -44,7 +40,7 @@ export const load: LayoutServerLoad = async (event) => {
             user: event.locals.user,
           
             recentTickets: recentTickets.documents,
-            pinnedTickets: pinnedTickets.documents,
+          
             messages: Object.values(latestMessages)
         };
     } catch (error) {

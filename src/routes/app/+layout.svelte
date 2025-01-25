@@ -13,6 +13,7 @@
 	export let data: LayoutData;
 	let unsubscribe: () => void;
 	const isSidebarCollapsed = writable(false);
+	const isRightSidebarCollapsed = writable(false);
 	$: ticketId = $page.params.ticketId;
 
 	onMount(async () => {
@@ -58,7 +59,10 @@
 	<!-- Right Sidebar -->
 	{#if ticketId}
 		<div in:fly={{ x: 300, duration: 300 }}>
-			<RightSidebar ticket={$tickets.find(ticket => ticket.$id === ticketId)} />
+			<RightSidebar 
+				ticket={$tickets.find(ticket => ticket.$id === ticketId)} 
+				bind:isCollapsed={$isRightSidebarCollapsed}
+			/>
 		</div>
 	{/if}
 

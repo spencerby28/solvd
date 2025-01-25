@@ -56,6 +56,13 @@ function createChatStore() {
                         console.log('[ChatStore] Adding message from realtime:', payload);
                         addMessageIfNew(payload);
                     }
+                    
+                    if (events.some((e: string) => e.includes('.update'))) {
+                        console.log('[ChatStore] Updating message from realtime:', payload);
+                        update(messages => messages.map(msg => 
+                            msg.$id === payload.$id ? payload : msg
+                        ));
+                    }
                 }
             );
 
