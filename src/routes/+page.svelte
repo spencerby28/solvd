@@ -13,7 +13,7 @@ const features = [
   },
   {
     icon: MessageSquare,
-    title: "Smart Responses",
+    title: "Smart Responses", 
     description: "Save time with AI-powered response suggestions and templates.",
     delay: 200
   },
@@ -118,9 +118,8 @@ const pricingTiers = [
 const testimonials = [
   {
     quote: "GetSolvd's AI handles most of our tickets automatically with incredible accuracy. The few that need human review come with smart suggestions that make resolution quick and easy.",
-    author: "Sarah Chen", 
+    author: "Sarah Chen",
     role: "Head of Customer Success",
-
   },
   {
     quote: "With the Shopify integration, our support has been flawless. Customer response times dropped 75% and satisfaction is through the roof - it's even boosting our sales numbers!",
@@ -134,6 +133,29 @@ const testimonials = [
   }
 ];
 </script>
+
+<svelte:head>
+  <title>GetSolvd - AI-First Customer Support Platform</title>
+  <meta name="description" content="Transform your customer support with GetSolvd's AI-powered platform. Unified inbox, smart responses, and seamless team collaboration for exceptional customer service." />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://getsolvd.xyz/" />
+  <meta property="og:title" content="GetSolvd - AI-First Customer Support Platform" />
+  <meta property="og:description" content="Transform your customer support with GetSolvd's AI-powered platform. Unified inbox, smart responses, and seamless team collaboration for exceptional customer service." />
+  <meta property="og:image" content="https://getsolvd.xyz/images/dashboard.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://getsolvd.xyz/" />
+  <meta property="twitter:title" content="GetSolvd - AI-First Customer Support Platform" />
+  <meta property="twitter:description" content="Transform your customer support with GetSolvd's AI-powered platform. Unified inbox, smart responses, and seamless team collaboration for exceptional customer service." />
+  <meta property="twitter:image" content="https://getsolvd.xyz/images/dashboard.png" />
+
+  <!-- Additional SEO -->
+  <meta name="keywords" content="customer support, AI support, help desk software, customer service platform, support automation" />
+  <link rel="canonical" href="https://getsolvd.xyz/" />
+</svelte:head>
 
 <div class="min-h-screen">
   <header class="absolute top-0 left-0 w-full z-50 py-6">
