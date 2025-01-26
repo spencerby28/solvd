@@ -7,7 +7,7 @@ export const load: LayoutServerLoad = async (event) => {
         console.log('[LAYOUT server load] user not found');
         return {
             status: 302,
-            redirect: '/overview'
+            redirect: '/'
         };
     }
     try {

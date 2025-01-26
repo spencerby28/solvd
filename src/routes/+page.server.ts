@@ -1,11 +1,9 @@
 import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (locals.user) {
-        return {
-            status: 302,
-            redirect: '/app'
-        };
+        throw redirect(302, '/app');
     }
 
     return {
