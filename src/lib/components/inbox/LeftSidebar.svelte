@@ -9,7 +9,7 @@
     import * as Collapsible from '$lib/components/ui/collapsible';
     import { goto } from '$app/navigation';
     import ChangeTenant from '$lib/components/modals/ChangeTenant.svelte';
-
+    import { HelpCircle, ChartColumnIncreasing} from 'lucide-svelte';
     export let isCollapsed = false;
     
 
@@ -210,11 +210,7 @@
                         class="w-full p-2 flex items-center mb-3 {isActive(item.href) ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg {isCollapsed ? 'justify-center' : ''}"
                     >
                         <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                                <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
+                            <HelpCircle class="w-5 h-5" strokeWidth={1.8} absoluteStrokeWidth={true}/>
                             {#if !isCollapsed}
                                 <span class="font-semibold">{item.label}</span>
                             {/if}
@@ -241,9 +237,7 @@
                                             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                                             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                         {:else if item.icon === 'bar-chart'}
-                                            <line x1="18" y1="20" x2="18" y2="10" />
-                                            <line x1="12" y1="20" x2="12" y2="4" />
-                                            <line x1="6" y1="20" x2="6" y2="14" />
+                                            <ChartColumnIncreasing class="w-5 h-5" strokeWidth={1.8} absoluteStrokeWidth={true}/>
                                         {/if}
                                     </svg>
                                     {#if !isCollapsed}

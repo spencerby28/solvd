@@ -4,26 +4,28 @@ import { Query } from 'appwrite';
 
 export const load: LayoutServerLoad = async (event) => {
     if (!event.locals.user) {
+        console.log('[LAYOUT server load] user not found');
         return {
             status: 302,
             redirect: '/overview'
         };
     }
-
     try {
         const { databases } = createSessionClient(event);
-
-        // Get recent/pinned tickets
-        const recentTickets = await databases.listDocuments('tickets', 'tickets', [
-            Query.limit(100),
-            Query.orderDesc('$createdAt')
-        ]);
-
-
-        // Get most recent messages for tickets
-        const messages = await databases.listDocuments('tickets', 'messages', [
-            Query.limit(100),
-            Query.orderDesc('$createdAt')
+        const tenantId = event.locals.user.prefs.tenantId;
+        // Fetch tenant data, tickets, and messages in parallel
+        const [tenant, recentTickets, messages] = await Promise.all([
+            databases.listDocuments('tenants', 'tenants', [
+                Query.equal('$id', tenantId)
+            ]),
+            databases.listDocuments('tickets', 'tickets', [
+                Query.limit(100),
+                Query.orderDesc('$createdAt')
+            ]),
+            databases.listDocuments('tickets', 'messages', [
+                Query.limit(100), 
+                Query.orderDesc('$createdAt')
+            ])
         ]);
 
         console.log('[LAYOUT server load] initial tickets got inital data');
@@ -38,9 +40,8 @@ export const load: LayoutServerLoad = async (event) => {
         
         return {
             user: event.locals.user,
-          
+            tenant: tenant.documents[0],
             recentTickets: recentTickets.documents,
-          
             messages: Object.values(latestMessages)
         };
     } catch (error) {

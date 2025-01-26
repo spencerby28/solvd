@@ -7,13 +7,13 @@
 	import { page } from '$app/stores';
 	import { writable } from 'svelte/store';
 	import LeftSidebar from '$lib/components/inbox/LeftSidebar.svelte';
-	import RightSidebar from '$lib/components/inbox/RightSidebar.svelte';
+	import RightSidebar from '$lib/components/inbox/RightSidebar/RightSidebar.svelte';
 	import { fly } from 'svelte/transition';
 
 	export let data: LayoutData;
 	let unsubscribe: () => void;
 	const isSidebarCollapsed = writable(false);
-	const isRightSidebarCollapsed = writable(false);
+
 	$: ticketId = $page.params.ticketId;
 
 	onMount(async () => {
@@ -61,7 +61,6 @@
 		<div in:fly={{ x: 300, duration: 300 }}>
 			<RightSidebar 
 				ticket={$tickets.find(ticket => ticket.$id === ticketId)} 
-				bind:isCollapsed={$isRightSidebarCollapsed}
 			/>
 		</div>
 	{/if}
