@@ -170,7 +170,7 @@ const testimonials = [
       <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div in:fly="{{ y: 50, duration: 1000 }}" class="space-y-8">
           <h1 class="text-5xl md:text-6xl font-bold leading-tight">
-            AI-First Customer Support 
+            AI-First <br> Customer Support 
           </h1>
           <p class="text-xl text-gray-100">
             Beyond Tickets, Beyond Bots: <br> Real Intelligence for Real Customer Service
