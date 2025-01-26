@@ -14,6 +14,18 @@
     }
 </script>
 
+<svelte:head>
+    <title>Chat Support | Get Help with Orders, Products & More</title>
+    <meta name="description" content="Get instant help with order tracking, product information, returns & exchanges, and general inquiries through our live chat support." />
+    <meta name="keywords" content="customer support, live chat, order tracking, product help, returns, exchanges" />
+    <meta property="og:title" content="Chat Support | Get Help with Orders, Products & More" />
+    <meta property="og:description" content="Get instant help with order tracking, product information, returns & exchanges, and general inquiries through our live chat support." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Chat Support | Get Help with Orders, Products & More" />
+    <meta name="twitter:description" content="Get instant help with order tracking, product information, returns & exchanges, and general inquiries through our live chat support." />
+</svelte:head>
+
 <div class="flex flex-col min-h-screen">
     <header class="bg-green-600 text-white py-4">
         <div class="max-w-2xl mx-auto px-4">

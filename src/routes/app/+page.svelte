@@ -1,3 +1,15 @@
+<svelte:head>
+    <title>Solvd - AI-Powered Customer Support Platform</title>
+    <meta name="description" content="Solvd provides intelligent customer support solutions with website chat, social media integration, and AI-powered automation to help businesses deliver exceptional customer service." />
+    <meta name="keywords" content="customer support, AI support, chatbot, help desk, social media integration, Shopify integration, knowledge base" />
+    <meta property="og:title" content="Solvd - AI-Powered Customer Support Platform" />
+    <meta property="og:description" content="Intelligent customer support solutions with website chat, social media integration, and AI-powered automation." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Solvd - AI-Powered Customer Support Platform" />
+    <meta name="twitter:description" content="Intelligent customer support solutions with website chat, social media integration, and AI-powered automation." />
+</svelte:head>
+
 <div class="p-8">
     <h1 class="text-4xl font-extrabold text-green-600 mb-8">Welcome to Solvd</h1>
 
