@@ -9,6 +9,9 @@
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
     import { selectedTicket } from '$lib/stores/selectedTicket';
     import type { TicketStatus } from '$lib/types';
+    import * as ContextMenu from "$lib/components/ui/context-menu";
+    import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+    import { Edit, ChevronDown } from 'lucide-svelte';
     export let data: PageData;
 
     const tenantId = data.user?.prefs.tenantId;
@@ -23,18 +26,26 @@
     ];
 
     let isStatusDropdownOpen = false;
-    
     // Initialize currentStatus from ticket data
     $: currentStatus = statusOptions.find(status => status.value === data.ticket?.status) || statusOptions[0];
+    async function handleStatusChange(status: typeof statusOptions[0]) {
+        try {
+            await fetch(`/api/web/tickets/update?status=${status.value}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ticketId: $page.params.ticketId
+                })
+            });
+            
+            // Update currentStatus after successful API call
+            currentStatus = status;
 
-    function toggleStatusDropdown() {
-        isStatusDropdownOpen = !isStatusDropdownOpen;
-    }
-
-    function handleStatusChange(status: typeof statusOptions[0]) {
-        // TODO: Implement status update functionality
-        console.log('Status changed to:', status.value);
-        isStatusDropdownOpen = false;
+        } catch (error) {
+            console.error('Failed to update ticket status:', error);
+        }
     }
 
     let editContent = '';
@@ -123,7 +134,8 @@
     // Derive messages for current ticket from the store
     const ticketMessages = derived([messages, page], ([$messages, $page]) => {
         const ticketId = $page.params.ticketId;
-        return $messages[ticketId] || [];
+        const ticketMessages = $messages[ticketId] || [];
+        return [...ticketMessages].sort((a, b) => new Date(a.$createdAt).getTime() - new Date(b.$createdAt).getTime());
     });
 </script>
 
@@ -159,34 +171,31 @@
                 {/if}
                 
                 <div class="relative">
-                    <!-- Status Badge/Button -->
-                    <button
-                        on:click={toggleStatusDropdown}
-                        class="flex items-center gap-2 px-3 py-1.5 rounded-md {currentStatus.color} border text-sm font-medium"
-                    >
-                        {currentStatus.label}
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-
-                    <!-- Status Dropdown -->
-                    {#if isStatusDropdownOpen}
-                        <div class="absolute right-0 my-2  w-fit min-w-[100px] rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
-                            <div class="py-1 px-2 space-y-2 flex flex-col " role="menu">
-                                {#each statusOptions as status}
-                                    <button
-                                        on:click={() => handleStatusChange(status)}
-                                        class="w-full text-left px-3 py-1 text-sm rounded-md {status.color} hover:opacity-80 transition-opacity"
-                                    >
+                    <DropdownMenu.Root>
+                        <DropdownMenu.Trigger>
+                            <button class="flex items-center gap-2 px-3 py-1.5 rounded-md {currentStatus.color} border text-sm font-medium">
+                                {currentStatus.label}
+                                <ChevronDown class="w-4 h-4" />
+                            </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content class="w-[140px]">
+                            
+                            
+                            {#each statusOptions as status}
+                                <DropdownMenu.Item
+                                    on:click={() => handleStatusChange(status)}
+                                    class="{status.color} px-3 py-2.5 my-1 mx-1 rounded-md text-sm"
+                                >
+                                    {#if status.label === currentStatus.label}
+                                        <span class="font-bold">{status.label}</span>
+                                    {:else}
                                         {status.label}
-                                    </button>
-                                {/each}
-                            </div>
-                        </div>
-                    {/if}
+                                    {/if}
+                                </DropdownMenu.Item>
+                            {/each}
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Root>
                 </div>
-
 
             </div>
         </div>
@@ -196,51 +205,64 @@
         {#if $ticketMessages.length > 0}
             {#each $ticketMessages as message}
                 <div class="flex {message.sender_type === 'customer' ? 'justify-start' : 'justify-end'}">
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}"
-                        class:cursor-pointer={$inboxActions.isEditMode && (message.sender_type === 'agent' || message.sender_type === 'ai')}
-                        on:click={() => handleEditMessage(message)}
-                    >
-                        <div class="min-w-0 max-w-full">
-                            <div class="flex items-center space-x-2 mb-1 {message.sender_type === 'customer' ? '' : 'flex-row-reverse space-x-reverse'}">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                    {#if message.sender_type === 'customer'}
-                                        <span class="text-gray-600 font-medium text-sm">C</span>
-                                    {:else}
-                                        <span class="text-blue-600 font-medium text-sm">A</span>
-                                    {/if}
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 truncate max-w-[150px]">{message.sender_name}</span>
-                            </div>
-                            <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-blue-100 text-gray-900' : 'bg-green-100 text-gray-800'} break-words shadow-lg ml-10">
-                                {#if $inboxActions.selectedMessageId === message.$id}
-                                    <textarea
-                                        bind:value={editContent}
-                                        data-message-id={message.$id}
-                                        class="max-w-[400px] min-w-[325px] bg-transparent text-sm whitespace-pre-wrap break-words focus:ring-2 focus:ring-green-600 focus:outline-none border-none p-0 m-0 resize-none rounded-sm"
-                                        on:input={adjustTextareaHeight}
-                                    >{message.content}</textarea>
-                                {:else}
-                                    <p class="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                                {/if}
-                            </div>
-                            <div class="mt-1 flex items-center gap-2 {message.sender_type === 'customer' ? 'ml-10' : 'flex-row-reverse'}">
-                                <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
-                                {#if $inboxActions.selectedMessageId === message.$id && $inboxActions.isEditMode}
-                                    <div on:click={handleSubmitEdit}>
-                                        <RippleButton
-                                            class="px-2 py-0.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md"
-                                            rippleColor="#16a34a"
-                                            duration="500ms"
-                                        >
-                                            Submit
-                                        </RippleButton>
+                    <ContextMenu.Root>
+                        <ContextMenu.Trigger>
+                            <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}"
+                                class:cursor-pointer={$inboxActions.isEditMode && (message.sender_type === 'agent' || message.sender_type === 'ai')}
+                                on:click={() => handleEditMessage(message)}
+                            >
+                                <div class="min-w-0 max-w-full">
+                                    <div class="flex items-center space-x-2 mb-1 {message.sender_type === 'customer' ? '' : 'flex-row-reverse space-x-reverse'}">
+                                        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                            {#if message.sender_type === 'customer'}
+                                                <span class="text-gray-600 font-medium text-sm">C</span>
+                                            {:else}
+                                                <span class="text-blue-600 font-medium text-sm">A</span>
+                                            {/if}
+                                        </div>
+                                        <span class="text-sm font-medium text-gray-900 truncate max-w-[150px]">{message.sender_name}</span>
                                     </div>
-                                {/if}
+                                    <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-blue-100 text-gray-900' : 'bg-green-100 text-gray-800'} break-words shadow-lg ml-10">
+                                        {#if $inboxActions.selectedMessageId === message.$id}
+                                            <textarea
+                                                bind:value={editContent}
+                                                data-message-id={message.$id}
+                                                class="max-w-[400px] min-w-[325px] bg-transparent text-sm whitespace-pre-wrap break-words focus:ring-2 focus:ring-green-600 focus:outline-none border-none p-0 m-0 resize-none rounded-sm"
+                                                on:input={adjustTextareaHeight}
+                                            >{message.content}</textarea>
+                                        {:else}
+                                            <p class="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                                        {/if}
+                                    </div>
+                                    <div class="mt-1 flex items-center gap-2 {message.sender_type === 'customer' ? 'ml-10' : 'flex-row-reverse'}">
+                                        <span class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</span>
+                                        {#if $inboxActions.selectedMessageId === message.$id && $inboxActions.isEditMode}
+                                            <div on:click={handleSubmitEdit}>
+                                                <RippleButton
+                                                    class="px-2 py-0.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md"
+                                                    rippleColor="#16a34a"
+                                                    duration="500ms"
+                                                >
+                                                    Submit
+                                                </RippleButton>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </ContextMenu.Trigger>
+                        {#if message.sender_type === 'agent' || message.sender_type === 'ai'}
+                            <ContextMenu.Content>
+                                <ContextMenu.Item on:click={() => {
+                                    inboxActions.toggleEditMode();
+                                    handleEditMessage(message);
+                                }}>
+                                    <Edit class="h-4 w-4 mr-2" />
+                                    Edit Message
+                                </ContextMenu.Item>
+                            </ContextMenu.Content>
+                        {/if}
+                    </ContextMenu.Root>
                 </div>
             {/each}
         {:else}

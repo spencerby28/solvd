@@ -11,9 +11,10 @@
     import { slide } from 'svelte/transition';
 
     export let ticket: Tickets | undefined;
+    console.log('ticket', ticket);
     export let isCollapsed = false;
-    let customer: Customers | undefined;
-    let loading = true;
+    let loading = false;
+    console.log('isCollapsed', isCollapsed);
 
     // Mock internal messages - keeping these as requested
     const mockInternalMessages = [
@@ -144,41 +145,26 @@
     }
 
     $: if (ticket) {
-        loading = true;
-        const {databases} = createBrowserClient();
-        databases.getDocument('tickets', 'customers', ticket.customer_id)
-            .then(doc => {
-                console.log('Customer:', doc);
-                customer = doc as unknown as Customers;
-            })
-            .catch(error => {
-                console.error('Error fetching customer:', error);
-            })
-            .finally(() => {
-                loading = false;
-            });
+        loading = false;
     }
-
 
     //@ts-ignore
     onMount(async () => {
         document.addEventListener('click', handleClickAway);
-
-
 
         // Get current seconds and calculate delay until next minute
         const now = new Date();
         const delay = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
         
         // Initial update
-        userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
+        userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
         
         // Set timeout to sync with minute boundary
         setTimeout(() => {
-            userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
+            userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
             // Start interval once synced
             timeInterval = setInterval(() => {
-                userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
+                userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
             }, 60000);
         }, delay);
 
@@ -226,7 +212,9 @@
 
     // Format timezone name
     function formatTimezone(timezone: string) {
-        return timezone.split('/')[1].replace(/_/g, ' ');
+        if (!timezone) return '';
+        if (timezone === 'UTC') return 'UTC';
+        return timezone.split('/')[1]?.replace(/_/g, ' ') || timezone;
     }
 
     function formatDuration(minutes: number): string {
@@ -252,9 +240,9 @@
         return 'text-red-500';
     }
 
-    $: userTime = customer?.timezone ? formatUserTime(customer.timezone) : '';
-    $: languageName = customer?.locale ? getLanguageName(customer.locale) : '';
-    $: countryName = customer?.locale ? getCountryName(customer.locale) : '';
+    $: userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
+    $: languageName = ticket?.customer_locale ? getLanguageName(ticket.customer_locale) : '';
+    $: countryName = ticket?.customer_locale ? getCountryName(ticket.customer_locale) : '';
 
     //TODO: fix the customer details from layout shifting the whole fkcn thing
 </script>
@@ -295,8 +283,8 @@
     }
 </style>
 
-<aside class="bg-gray-100 border-x border-gray-200 shadow-lg relative rounded-l-3xl flex flex-col h-screen overflow-hidden transition-all duration-300 {isCollapsed ? 'w-16' : 'w-80'} group">	
-    <div class="p-4 relative">
+<aside class="bg-gray-100 border-x border-gray-200 shadow-lg relative rounded-l-3xl flex flex-col h-screen overflow-hidden transition-all duration-300 {isCollapsed ? 'w-16' : 'w-80'}">	
+    <div class="p-4 relative group/info">
         <div class="flex items-start gap-4">
             <div class="w-14 h-14 rounded-xl bg-[#16a34a] bg-opacity-60 flex items-center justify-center relative shrink-0 transition-all duration-300 {isCollapsed ? 'w-8 h-8' : ''}">
                 <span class="text-xl font-bold text-white transition-all duration-300 {isCollapsed ? 'text-base' : ''}">D</span>
@@ -314,8 +302,8 @@
                             <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
                         </div>
                     {:else}
-                        <p class="text-2xl font-bold truncate">{customer?.name}</p>
-                        <p class="text-sm text-gray-600 truncate">{customer?.email || 'No email provided'}</p>
+                        <p class="text-2xl font-bold truncate">{ticket?.customer_name}</p>
+                        <p class="text-sm text-gray-600 truncate">{ticket?.customer_email || 'No email provided'}</p>
                     {/if}
                 </div>
             {/if}
@@ -324,7 +312,7 @@
         <!-- Collapse button -->
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button 
-            class="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg absolute transition-all duration-300 opacity-0 group-hover:opacity-100 {isCollapsed ? 'left-[-12px] top-4' : 'left-4 top-4'}"
+            class="p-1 bg-gray-100 hover:bg-gray-200 rounded-lg absolute transition-all duration-300 opacity-0 group-hover/info:opacity-100 {isCollapsed ? 'left-[-12px] top-4' : 'left-4 top-4'}"
             on:click={() => isCollapsed = !isCollapsed}
         >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" 
@@ -342,7 +330,7 @@
                         <div class="h-6 w-40 bg-gray-200 rounded animate-pulse"></div>
                     </div>
                 {:else}
-                    {#if customer?.timezone}
+                    {#if ticket?.customer_timezone}
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <div class="w-8 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-[18px] h-[18px] text-gray-700">
@@ -357,10 +345,10 @@
                                     <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.976.544l.062.029.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" />
                                 </svg>
                             </div>
-                            <span class="text-gray-700">{formatTimezone(customer.timezone)}</span>
+                            <span class="text-gray-700">{formatTimezone(ticket.customer_timezone)}</span>
                         </div>
                     {/if}
-                    {#if customer?.locale}
+                    {#if ticket?.customer_locale}
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <div class="w-8 flex items-center justify-center">
                                 <span class="text-base font-semibold text-gray-700">Aa</span>
@@ -369,7 +357,7 @@
                         </div>
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <div class="w-8 flex items-center justify-center">
-                                <span class="text-xl">{countryCodeEmoji(customer.locale.split('-')[1])}</span>
+                                <span class="text-xl">{countryCodeEmoji(ticket.customer_locale.split('-')[1])}</span>
                             </div>
                             <span class="text-gray-700">{countryName}</span>
                         </div>
@@ -554,7 +542,7 @@
         {#if !isCollapsed}
             <p class="text-xs text-gray-500 mb-3">CONNECTED ACCOUNTS</p>
         {/if}
-        {#if !customer?.instagram_username && !customer?.shopify_id}
+        {#if !ticket?.customer_instagram_username && !ticket?.customer_shopify_id}
             {#if !isCollapsed}
                 <Dropdown.Root bind:open={isConnectAccountsDropdownOpen}>
                     <Dropdown.Trigger class="w-full py-2 px-3 text-sm bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center gap-2 text-gray-500">
@@ -598,7 +586,7 @@
             {/if}
         {:else}
             <div class="space-y-3">
-                {#if customer.instagram_username}
+                {#if ticket.customer_instagram_username}
                     <div class="flex items-center justify-between w-full">
                         <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -610,14 +598,14 @@
                         {#if !isCollapsed}
                             <div class="flex-1 px-2">
                                 <p class="text-sm font-medium text-gray-900">Instagram</p>
-                                <p class="text-xs text-gray-500">{customer.instagram_username}</p>
+                                <p class="text-xs text-gray-500">{ticket.customer_instagram_username}</p>
                             </div>
-                            <a href="https://instagram.com/{customer.instagram_username}" target="_blank" rel="noopener noreferrer" class="text-sm text-green-600 hover:text-green-700">View</a>
+                            <a href="https://instagram.com/{ticket.customer_instagram_username}" target="_blank" rel="noopener noreferrer" class="text-sm text-green-600 hover:text-green-700">View</a>
                         {/if}
                     </div>
                 {/if}
 
-                {#if customer.shopify_id}
+                {#if ticket.customer_shopify_id}
                     <div class="flex items-center justify-between w-full">
                         <div class="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
