@@ -48,7 +48,7 @@ export const actions = {
 			console.log('Attempting to create email/password session');
 			// Create the session using the client
 			const session = await account.createEmailPasswordSession(email, password);
-			console.log('Session created successfully');
+			console.log('Session created successfully', session);
 
 			// Set the session cookie with the secret
 			cookies.set(SESSION_COOKIE, session.secret, {
@@ -58,7 +58,7 @@ export const actions = {
 				path: '/',
 				httpOnly: true
 			});
-			console.log('Session cookie set');
+			console.log('Session cookie set', cookies.get(SESSION_COOKIE));
 		} catch (error) {
 			console.error('Login error:', error);
 			return fail(400, {
