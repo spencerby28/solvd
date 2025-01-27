@@ -4,16 +4,12 @@
     import type { TicketStatus } from '$lib/types';
     import Badge from '$lib/components/primatives/Badge.svelte';
     import * as Dropdown from '$lib/components/ui/dropdown-menu';
-    import { selectedTicket } from '$lib/stores/selectedTicket';
+    import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
 
     export let ticket: TicketDocument;
 
     $: isSelected = $page.params.ticketId === ticket.$id;
-    $: {
-        if (isSelected) {
-            selectedTicket.set(ticket);
-        }
-    }
+ 
     const inboxId = $page.params.inboxId;
     $: queryParams = $page.url.searchParams.toString();
     console.log(queryParams);

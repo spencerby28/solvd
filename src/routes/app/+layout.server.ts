@@ -13,6 +13,8 @@ export const load: LayoutServerLoad = async (event) => {
     try {
         const { databases } = createSessionClient(event);
         const tenantId = event.locals.user.prefs.tenantId;
+        const currentPath = event.url.pathname;
+        
         // Fetch tenant data, tickets, and messages in parallel
         const [tenant, recentTickets, messages] = await Promise.all([
             databases.listDocuments('tenants', 'tenants', [
@@ -42,7 +44,8 @@ export const load: LayoutServerLoad = async (event) => {
             user: event.locals.user,
             tenant: tenant.documents[0],
             recentTickets: recentTickets.documents,
-            messages: Object.values(latestMessages)
+            messages: Object.values(latestMessages),
+            currentPath
         };
     } catch (error) {
         console.error('Error fetching app data:', error);
@@ -55,7 +58,8 @@ export const load: LayoutServerLoad = async (event) => {
             },
             recentTickets: [],
             pinnedTickets: [],
-            messages: []
+            messages: [],
+            currentPath: event.url.pathname
         };
     }
 };

@@ -5,14 +5,19 @@
     import Badge from '$lib/components/primatives/Badge.svelte';
     import type { Tickets } from '$lib/types';
     import { PencilLine } from 'lucide-svelte';
+    import { page } from '$app/stores';
     import { collapsed } from '$lib/stores/collapsed';
+    import { updateTicketStatus } from '$lib/db/ticket';
+    import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
 
+    $: console.log('selectedTicket', $selectedTicket?.status);
     export let ticket: Tickets | undefined;
 
     let selectedAssignees = new Set<string>();
     let isAssignDropdownOpen = false;
     let isConnectAccountsDropdownOpen = false;
     let expandedAssignee: string | null = null;
+    let userName = $page.data.user.name;
     let expandTimeout: NodeJS.Timeout | null = null;
 
     const assignees = [
@@ -64,6 +69,10 @@
             expandedAssignee = null;
             if (expandTimeout) clearTimeout(expandTimeout);
         }
+    }
+    async function escalateTicket() {
+        if (!$selectedTicket) return;
+        await updateTicketStatus($selectedTicket.$id, 'ESCALATED', userName);
     }
 
     // Helper function to calculate ticket duration
@@ -220,20 +229,25 @@
                 {/if}
             </div>
         </RippleButton>
-        <RippleButton 
-            class="p-2 text-sm bg-white hover:bg-gray-50 border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
-            rippleColor="#dc2626"
-            duration="500ms"
-        >
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                </svg>
-                {#if !$collapsed}
-                    <span>Escalate</span>
-                {/if}
-            </div>
-        </RippleButton>
+        
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div on:click={() => $selectedTicket?.status !== 'ESCALATED' && escalateTicket()}>
+            <RippleButton 
+                class="w-full p-2 text-sm {ticket?.status === 'ESCALATED' ? 'bg-red-50 text-red-600' : 'bg-white'} hover:bg-gray-50 border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
+                rippleColor="#dc2626"
+                duration="500ms"
+            >
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                    {#if !$collapsed}
+                        <span>{ticket?.status === 'ESCALATED' ? 'Escalated' : 'Escalate'}</span>
+                    {/if}
+                </div>
+            </RippleButton>
+        </div>
         <RippleButton 
             class="p-2 text-sm bg-white hover:bg-gray-50 border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
             rippleColor="#16a34a"

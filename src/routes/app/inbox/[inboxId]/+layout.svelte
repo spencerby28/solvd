@@ -11,7 +11,7 @@
     import { goto } from '$app/navigation';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
     import type { LayoutData } from './$types';
-    import { selectedTicket } from '$lib/stores/selectedTicket';
+    import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
     import { writable } from 'svelte/store';
     import TextEditor from '$lib/components/inbox/TextEditor.svelte';
     
@@ -121,12 +121,12 @@
                             <span>Filter{activeFilters.length > 0 ? ` (${activeFilters.length})` : ''}</span>
                         </Dropdown.Trigger>
                         <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg mt-1">
-                            <Dropdown.Item class="px-3 py-2 text-sm cursor-pointer flex items-center gap-2 justify-between" on:click={() => applyFilter('filter', 'showSolvd')}>
+                            <Dropdown.Item class="px-3 py-2 text-sm cursor-pointer flex items-center gap-2 justify-between whitespace-nowrap" on:click={() => applyFilter('filter', 'showSolvd')}>
                                 <div class="flex items-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
                                         <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
                                     </svg>
-                                    <span>Show Solved Tickets</span>
+                                    <span>Show Solvd</span>
                                 </div>
                                 {#if $page.url.searchParams.getAll('filter').includes('showSolvd')}
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">

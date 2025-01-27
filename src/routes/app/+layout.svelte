@@ -8,13 +8,20 @@
 	import { writable } from 'svelte/store';
 	import LeftSidebar from '$lib/components/inbox/LeftSidebar.svelte';
 	import RightSidebar from '$lib/components/inbox/RightSidebar/RightSidebar.svelte';
-	import { fly } from 'svelte/transition';
+	import { fly, fade } from 'svelte/transition';
 
 	export let data: LayoutData;
 	let unsubscribe: () => void;
 	const isSidebarCollapsed = writable(false);
 
+	let mounted = false;
+	onMount(() => {
+		mounted = true;
+	});
+
 	$: ticketId = $page.params.ticketId;
+	//@ts-ignore
+	$: showRightSidebar = mounted && ticketId && data.currentPath.includes('/inbox/');
 
 	onMount(async () => {
 		const session = await fetch('/api/web/session').then(res => res.json());
@@ -57,12 +64,27 @@
 	</main>
 
 	<!-- Right Sidebar -->
-	{#if ticketId}
-		<div in:fly={{ x: 300, duration: 300 }}>
-			<RightSidebar 
-				ticket={$tickets.find(ticket => ticket.$id === ticketId)} 
-			/>
-		</div>
-	{/if}
+	<div class="right-sidebar-container" 
+		 class:hidden={!showRightSidebar}
+		 style="display: {!mounted ? 'none' : 'block'}">
+		{#if showRightSidebar}
+			<div in:fly={{ x: 300, duration: 300 }}
+				 out:fade={{ duration: 0 }}>
+				<RightSidebar 
+					ticket={$tickets.find(ticket => ticket.$id === ticketId)} 
+				/>
+			</div>
+		{/if}
+	</div>
 
 </div>
+
+<style>
+	.right-sidebar-container {
+		transition: width 300ms ease-out;
+	}
+	.right-sidebar-container.hidden {
+		width: 0;
+		overflow: hidden;
+	}
+</style>

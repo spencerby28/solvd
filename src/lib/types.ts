@@ -2,11 +2,11 @@ import type { Models } from "appwrite";
 
 export type TicketStatus = 
     // Core
-    | 'new'
-    | 'open' 
-    | 'working'
-    | 'escalated'
-    | 'solved';
+    | 'NEW'
+    | 'OPEN' 
+    | 'WORKING'
+    | 'ESCALATED'
+    | 'SOLVD';
 
 export interface Messages extends Models.Document {
     content: string;
@@ -23,6 +23,7 @@ export interface Messages extends Models.Document {
     email?: string;
     subject?: string;
     is_welcome?: boolean;
+    internal?: boolean;
 }
 
 export interface ChatSessions extends Models.Document {
@@ -69,6 +70,7 @@ export interface Tickets extends Models.Document {
     last_message?: string;
     replied?: boolean;
     converted?: boolean;
+    inbox_id?: string;
 }
 
 export interface Customers extends Models.Document {

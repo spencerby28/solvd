@@ -1,6 +1,6 @@
 <script lang="ts">
     import {inboxActions} from '$lib/stores/inboxActions';
-    import { selectedTicket } from '$lib/stores/selectedTicket';
+    import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
     import {Upload, HelpCircle, Brain, SquarePen} from 'lucide-svelte';
 
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';

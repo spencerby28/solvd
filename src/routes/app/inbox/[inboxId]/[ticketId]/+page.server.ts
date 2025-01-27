@@ -10,12 +10,18 @@ export const load: PageServerLoad = async (event) => {
     let lastId = null;
     
     try {
-        // First get the ticket to get the customer_id
-        const ticket = await databases.getDocument('tickets', 'tickets', ticketId);
-        const customerId = ticket.customer_id;
+        // Get ticket and internal messages in parallel
+        const [ticket, internalMessages] = await Promise.all([
+            databases.getDocument('tickets', 'tickets', ticketId),
+            databases.listDocuments('tickets', 'messages', [
+                Query.equal('ticket_id', ticketId),
+                Query.equal('sender_type', 'system'),
+                Query.orderAsc('$createdAt')
+            ])
+        ]);
 
-        // Get the customer
-      //  const customer = await databases.getDocument('tickets', 'customers', customerId);
+        const customerId = ticket.customer_id;
+        console.log('[PAGE SERVER] Internal messages', internalMessages);
 
         // Keep fetching messages until we get all of them
         while (true) {
@@ -46,7 +52,8 @@ export const load: PageServerLoad = async (event) => {
 
         return {
             messages: allMessages,
-            ticket: ticket
+            ticket: ticket,
+            internalMessages: internalMessages.documents
         };
     } catch (err: unknown) {
         console.error('Error fetching messages:', err);

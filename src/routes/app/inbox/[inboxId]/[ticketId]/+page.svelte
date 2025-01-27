@@ -7,14 +7,18 @@
     import { writable, get } from 'svelte/store';
     import { inboxActions } from '$lib/stores/inboxActions';
     import RippleButton from '$lib/components/primatives/RippleButton.svelte';
-    import { selectedTicket } from '$lib/stores/selectedTicket';
+    import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
     import type { TicketStatus } from '$lib/types';
     import * as ContextMenu from "$lib/components/ui/context-menu";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
     import { Edit, ChevronDown } from 'lucide-svelte';
+    import { internalMessages } from '$lib/stores/internalMessages';
     export let data: PageData;
 
     const tenantId = data.user?.prefs.tenantId;
+    const userName = data.user?.name;
+    internalMessages.set(data.internalMessages as Messages[]);
+    $: console.log('internalMessages', data.internalMessages);
     
     // Ticket status options matching TicketListItem
     const statusOptions = [
@@ -26,9 +30,11 @@
     ];
 
     let isStatusDropdownOpen = false;
-    // Initialize currentStatus from ticket data
-    $: currentStatus = statusOptions.find(status => status.value === data.ticket?.status) || statusOptions[0];
+    // Initialize currentStatus from selectedTicket store
+    $: currentStatus = statusOptions.find(status => status.value === $selectedTicket?.status) || statusOptions[0];
+    $: console.log('currentStatus', currentStatus);
     async function handleStatusChange(status: typeof statusOptions[0]) {
+        
         try {
             await fetch(`/api/web/tickets/update?status=${status.value}`, {
                 method: 'POST',
@@ -36,7 +42,9 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    ticketId: $page.params.ticketId
+                    ticketId: $selectedTicket?.$id,
+                    userName: userName,
+                
                 })
             });
             
@@ -206,7 +214,10 @@
             {#each $ticketMessages as message}
                 <div class="flex {message.sender_type === 'customer' ? 'justify-start' : 'justify-end'}">
                     <ContextMenu.Root>
+                        <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <ContextMenu.Trigger>
+
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <div class="flex items-start max-w-[400px] min-w-0 {message.sender_type === 'customer' ? 'flex-row' : 'flex-row-reverse'}"
                                 class:cursor-pointer={$inboxActions.isEditMode && (message.sender_type === 'agent' || message.sender_type === 'ai')}
                                 on:click={() => handleEditMessage(message)}

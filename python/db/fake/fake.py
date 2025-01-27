@@ -44,7 +44,8 @@ def generate_fake_data():
         "tenant_ids": [],
         "customer_ids": [],
         "ticket_ids": [], 
-        "message_ids": []
+        "message_ids": [],
+        "agent_ids": []
     }
 
     try:
@@ -91,6 +92,52 @@ def generate_fake_data():
             ]
         )
         created_ids["tenant_ids"].append(tenant_id)
+
+        # Generate and create agents
+        agents = []
+        agent_types = [
+            {"role": "owner", "department": "Management"},
+            {"role": "admin", "department": "Support"},
+            {"role": "member", "department": "Sales"},
+            {"role": "member", "department": "Support"},
+            {"role": "member", "department": "Technical"}
+        ]
+        
+        for agent_type in agent_types:
+            agent_id = tenant_id + "_agent_" + str(len(agents) + 1)
+            agent_name = fake.name()
+            agent = {
+                "name": agent_name,
+                "email": fake.company_email(),
+                "tenant_id": tenant_id,
+                "department": agent_type["department"],
+                "role": agent_type["role"],
+                "status": "ACTIVE",
+                "expertise": [fake.job() for _ in range(random.randint(1, 3))],
+                "timezone": random.choice(pytz.all_timezones),
+                "avatar_url": fake.image_url(),
+                "phone_number": fake.phone_number()[:20],
+                "languages": random.sample(['en', 'es', 'fr', 'de', 'it'], random.randint(1, 3)),
+                "is_active": True,
+                "last_active": fake.date_time_this_month().isoformat(),
+                "created_at": fake.date_time_this_year().isoformat(),
+                "updated_at": fake.date_time_this_month().isoformat()
+            }
+            
+            agent_doc = database.create_document(
+                database_id='tenants',
+                collection_id='agents',
+                document_id=agent_id,
+                data=agent,
+                permissions=[
+                    "read(\"team:" + team_id + "\")",
+                    "update(\"team:" + team_id + "\")", 
+                    "write(\"team:" + team_id + ":admin\")"
+                ]
+            )
+            agents.append(agent)
+            created_ids["agent_ids"] = created_ids.get("agent_ids", []) + [agent_id]
+
         # Generate and create customers
         customers = []
         for _ in range(num_customers):
@@ -225,6 +272,7 @@ def generate_fake_data():
 
         return {
             "tenant": tenant,
+            "agents": agents,
             "customers": customers,
             "tickets": tickets,
             "messages": messages
@@ -239,10 +287,10 @@ if __name__ == "__main__":
     if data:
         print(f"Generated:")
         print(f"1 Tenant: {data['tenant']['tenant_name']}")
+        print(f"{len(data['agents'])} Agents")
         print(f"{len(data['customers'])} Customers")
         print(f"{len(data['tickets'])} Tickets")
         print(f"{len(data['messages'])} Messages")
         print(f"\nCreated IDs saved to {data['tenant']['tenant_name']}_created_ids.json")
     else:
-        print("Failed to generate fake data")
         print("Failed to generate fake data")
