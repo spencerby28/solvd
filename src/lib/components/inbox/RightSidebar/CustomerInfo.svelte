@@ -16,6 +16,9 @@
     let timeInterval: NodeJS.Timeout;
     let loading = false;
 
+    // Add a time interval for updating the user's time
+    let timeUpdateInterval: NodeJS.Timeout;
+
     // Format last seen absolute time
     function formatLastSeen(date: Date): string {
         return date.toLocaleString('en-US', {
@@ -90,8 +93,21 @@
         // Update status every second
         timeInterval = setInterval(updateStatus, 1000);
 
+        // Calculate time until next minute
+        const now = new Date();
+        const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+
+        // Set initial timeout for next minute, then start interval
+        setTimeout(() => {
+            userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
+            timeUpdateInterval = setInterval(() => {
+                userTime = ticket?.customer_timezone ? formatUserTime(ticket.customer_timezone) : '';
+            }, 60000);
+        }, msUntilNextMinute);
+
         return () => {
             if (timeInterval) clearInterval(timeInterval);
+            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
         };
     });
 
@@ -215,7 +231,7 @@
                     <p class="text-2xl font-bold truncate">{ticket?.customer_name}</p>
                     <p class="text-sm text-gray-600 truncate">{ticket?.customer_email || 'No email provided'}</p>
                     {#if currentStatus === 'offline'}
-                        <p class="text-xs font-bold text-gray-600 uppercase ">{lastSeenText}</p>
+                        <p class="text-xs mt-1 text-gray-600 uppercase ">{lastSeenText}</p>
                     {/if}
                 {/if}
             </div>

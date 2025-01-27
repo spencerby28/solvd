@@ -98,6 +98,7 @@ export interface CreateMessagePayload {
     tenant_id: string;
     attachments?: string[];
     email?: string;
+    internal?: boolean;
 }
 
 export interface Tenants extends Models.Document {

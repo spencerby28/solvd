@@ -9,9 +9,11 @@
     import { collapsed } from '$lib/stores/collapsed';
     import { updateTicketStatus } from '$lib/db/ticket';
     import { selectedTicket } from '$lib/stores/derivedSelectedTicket';
+    import { inboxActions } from '$lib/stores/inboxActions';
 
     $: console.log('selectedTicket', $selectedTicket?.status);
     export let ticket: Tickets | undefined;
+    const userId = $page.data.user?.$id;
 
     let selectedAssignees = new Set<string>();
     let isAssignDropdownOpen = false;
@@ -72,7 +74,12 @@
     }
     async function escalateTicket() {
         if (!$selectedTicket) return;
-        await updateTicketStatus($selectedTicket.$id, 'ESCALATED', userName);
+        await updateTicketStatus($selectedTicket.$id, 'ESCALATED', userName, userId);
+    }
+
+    function toggleInternalMessage() {
+        console.log('toggleInternalMessage');
+        inboxActions.toggleInternalMessage();
     }
 
     // Helper function to calculate ticket duration
@@ -215,26 +222,31 @@
         <p class="text-xs text-gray-500 mb-3 slide-transition" transition:slide|local>QUICK ACTIONS</p>
     {/if}
     <div class="grid {$collapsed ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-2'}">
-        <RippleButton 
-            class="p-2 text-sm bg-white hover:bg-gray-50 border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
-            rippleColor="#16a34a"
-            duration="500ms"
-        >
-            <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
-                </svg>
-                {#if !$collapsed}
-                    <span>Add Note</span>
-                {/if}
-            </div>
-        </RippleButton>
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div on:click={() => toggleInternalMessage()}>
+            <RippleButton 
+                class=" w-full p-2 text-sm {$inboxActions.internalMessage ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white hover:bg-gray-50'} border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
+                rippleColor="#16a34a"
+                duration="500ms"
+             
+            >
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                        <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                    </svg>
+                    {#if !$collapsed}
+                        <span class={$inboxActions.internalMessage ? 'font-bold' : ''}>Add Note</span>
+                    {/if}
+                </div>
+            </RippleButton>
+        </div>
         
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div on:click={() => $selectedTicket?.status !== 'ESCALATED' && escalateTicket()}>
             <RippleButton 
-                class="w-full p-2 text-sm {ticket?.status === 'ESCALATED' ? 'bg-red-50 text-red-600' : 'bg-white'} hover:bg-gray-50 border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
+                class="w-full p-2 text-sm {ticket?.status === 'ESCALATED' ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-white hover:bg-gray-50 border border-gray-200'} rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
                 rippleColor="#dc2626"
                 duration="500ms"
             >

@@ -7,7 +7,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
     try {
         console.log('[Ticket Update] Starting ticket update');
         const status = url.searchParams.get('status')?.toUpperCase();
-        const { ticketId, userName } = await request.json();
+        const { ticketId, userName, userId } = await request.json();
 
         console.log('[Ticket Update] Received params:', { status, ticketId });
 
@@ -33,10 +33,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
             // Create internal message
             const internalMessage = {
                 content: `${userName} set status to ${status}`,
-                sender_type: 'system',
-                sender_id: 'system',
+                sender_type: 'Status Update',
+                sender_id: userId,
                 channel: 'web',
-                sender_name: 'System',
+                sender_name: 'Status Update',
                 ticket_id: ticketId,
                 tenant_id: ticket.tenant_id,
                 internal: true

@@ -17,6 +17,7 @@
 
     const tenantId = data.user?.prefs.tenantId;
     const userName = data.user?.name;
+    const userId = data.user?.$id;
     internalMessages.set(data.internalMessages as Messages[]);
     $: console.log('internalMessages', data.internalMessages);
     
@@ -44,7 +45,7 @@
                 body: JSON.stringify({
                     ticketId: $selectedTicket?.$id,
                     userName: userName,
-                
+                    userId: userId
                 })
             });
             

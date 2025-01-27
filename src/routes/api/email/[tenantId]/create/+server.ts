@@ -16,7 +16,7 @@ export async function POST({ request }) {
 
 	// Get ticket data from request
 	const { ticketId, messages, recipient, subject, tenantId } = await request.json();
-	console.log(ticketId, messages, recipient, subject, tenantId);
+	//console.log(ticketId, messages, recipient, subject, tenantId);
 
 	// Generate tenant name from tenantId
 	let tenantName = tenantId;

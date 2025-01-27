@@ -1,9 +1,13 @@
 <script lang="ts">
   import { cn } from "$lib/utils";
+  import { createEventDispatcher } from 'svelte';
+  
   let _class: string = "";
   export { _class as class };
   export let duration = "2000ms";
   export let rippleColor = "#fff";
+
+  const dispatch = createEventDispatcher();
 
   let buttonRipples: Array<{
     x: number;
@@ -30,10 +34,15 @@
       );
     }, parseInt(duration));
   };
+
+  const handleClick = (event: MouseEvent) => {
+    createRipple(event);
+    dispatch('click', event);
+  };
 </script>
 
 <button
-  on:click={createRipple}
+  on:click={handleClick}
   {...$$restProps}
   style="--duration: {duration};"
   class={cn(
@@ -56,7 +65,8 @@
           background-color: {rippleColor};
           transform: scale(0);
         "
-      />
+      ></span>
+
     {/each}
   </span>
 </button>

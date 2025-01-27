@@ -3,12 +3,22 @@
     import type { Tickets, Messages } from '$lib/types';
     import { collapsed } from '$lib/stores/collapsed';
     import { internalMessages } from '$lib/stores/internalMessages';
-
+    import { deleteMessage } from '$lib/db/message';
     import { onMount } from 'svelte';
+    import { page } from '$app/stores';
 
     export let ticket: Tickets | undefined;
     export let messages: Messages[] = [];
 
+    async function handleDeleteMessage(messageId: string) {
+        if (!ticket) return;
+        try {
+            await deleteMessage(ticket.tenant_id || '', messageId, ticket.$id);
+            messages = messages.filter(m => m.$id !== messageId);
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
+    }
 </script>
 
 <style>
@@ -27,7 +37,7 @@
             <div class="space-y-4 pb-4">
                 {#if messages.length}
                     {#each messages as message, i}
-                        <div class="relative flex gap-3">
+                        <div class="relative flex gap-3 group">
                             {#if i < messages.length - 1}
                                 <div class="absolute left-2 top-4 h-full w-0.5 bg-gray-200"></div>
                             {/if}
@@ -37,6 +47,17 @@
                                 <p class="text-sm text-gray-600 break-words">{message.content}</p>
                                 <p class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</p>
                             </div>
+                            {#if message.sender_id === $page.data.user.$id}
+                                <button 
+                                    class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded"
+                                    on:click={() => handleDeleteMessage(message.$id)}
+                                    title="Delete message"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            {/if}
                         </div>
                     {/each}
                 {/if}

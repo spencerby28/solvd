@@ -40,13 +40,16 @@ export async function POST({ request, params, fetch }) {
 			]
 		);
 
-		if (messageData.channel === 'email') {
+		if (messageData.channel === 'email' && !messageData.internal) {
 			// Get all messages for this ticket
 			const messages = await databases.listDocuments('tickets', 'messages', [
 				Query.limit(100),
-				Query.equal('ticket_id', messageData.ticket_id)
+				Query.equal('ticket_id', messageData.ticket_id),
+			//	Query.notEqual('internal', true)
 			]);
-
+			
+			const finalMessages = messages.documents.filter(doc => !doc.internal);
+			console.log(finalMessages);
 			// If channel is email, also send email
 
 			try {
@@ -57,7 +60,7 @@ export async function POST({ request, params, fetch }) {
 					},
 					body: JSON.stringify({
 						ticketId: messageData.ticket_id,
-						messages: messages.documents,
+						messages: finalMessages,
 						recipient: messageData.email,
 						subject: messageData.subject,
 						tenantId: tenant_id

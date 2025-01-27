@@ -1,4 +1,4 @@
-export async function updateTicketStatus(ticketId: string, status: string, userName: string) {
+export async function updateTicketStatus(ticketId: string, status: string, userName: string, userId: string) {
     try {
         const response = await fetch(`/api/web/tickets/update?status=${status.toUpperCase()}`, {
             method: 'POST',
@@ -7,7 +7,8 @@ export async function updateTicketStatus(ticketId: string, status: string, userN
             },
             body: JSON.stringify({
                 ticketId,
-                userName
+                userName,
+                userId
             })
         });
 
