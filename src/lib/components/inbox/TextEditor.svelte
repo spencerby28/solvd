@@ -253,7 +253,7 @@
                         <span class="text-green-600 font-medium">Click to upload</span> or drag and drop files here
                     </div>
                     <p class="text-xs text-gray-500">
-                        PNG, JPG, PDF, DOC up to 30MB {#if uploadedFiles.length > 0}• {uploadedFiles.length} file{uploadedFiles.length === 1 ? '' : 's'} selected{/if}
+                        PNG, JPG, PDF, DOC, TXT, CSV, ZIP, MP4 up to 30MB {#if uploadedFiles.length > 0}• {uploadedFiles.length} file{uploadedFiles.length === 1 ? '' : 's'} selected{/if}
                     </p>
                 </label>
             </div>
