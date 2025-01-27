@@ -54,6 +54,7 @@ async function createTicket(
 
 export async function POST({ request }) {
     const chatData: ChatData = await request.json();
+    console.log('chatData', chatData);
     const tenant = chatData.tenantId;
     
     if (!tenant) {

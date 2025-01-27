@@ -10,6 +10,7 @@
     const tenantId = $page.params.tenantId;
     const ticketId = $page.params.ticketId;
     const messages = data.messages;
+    const userId = data.userId;
 
     let messageContent = '';
     let messagesContainer: HTMLDivElement;
@@ -19,6 +20,7 @@
         // @ts-ignore
         chatSession.set(messages);
 		console.log('messages', messages);
+        console.log('data', data);
     });
 
     async function handleSubmit() {

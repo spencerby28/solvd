@@ -6,6 +6,7 @@ import type { Messages, HelpType } from '$lib/types';
 
 export const load: LayoutServerLoad = async ({ cookies, params, url, locals }) => {
     const sessionCookie = cookies.get(SESSION_COOKIE);
+    let userId = null;
     
     if (!sessionCookie) {
         const { account, users } = createAdminClient();
@@ -15,7 +16,7 @@ export const load: LayoutServerLoad = async ({ cookies, params, url, locals }) =
             //TODO: get locale and location from ip address
             const setUserAnon = await users.updateLabels(session.userId, ['anon']);
             console.log('setUserAnon', setUserAnon);
-
+            userId = session.userId;
             // Set the session cookie
             cookies.set(SESSION_COOKIE, session.secret, {
                 sameSite: 'strict',
@@ -88,6 +89,7 @@ export const load: LayoutServerLoad = async ({ cookies, params, url, locals }) =
         );
 
         return {
+            userId: userId,
             tenantId: params.tenantId,
             ticketId,
             messages: [welcomeMessage]
