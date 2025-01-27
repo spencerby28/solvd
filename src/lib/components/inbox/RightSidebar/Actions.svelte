@@ -78,8 +78,14 @@
     }
 
     function toggleInternalMessage() {
-        console.log('toggleInternalMessage');
-        inboxActions.toggleInternalMessage();
+        // Check if any other actions are active
+        const otherActionsActive = Object.entries($inboxActions).some(([key, value]) => 
+            key !== 'internalMessage' && value === true
+        );
+
+        if (!otherActionsActive) {
+            inboxActions.toggleInternalMessage();
+        }
     }
 
     // Helper function to calculate ticket duration
@@ -226,7 +232,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div on:click={() => toggleInternalMessage()}>
             <RippleButton 
-                class=" w-full p-2 text-sm {$inboxActions.internalMessage ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white hover:bg-gray-50'} border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''}"
+                class=" w-full p-2 text-sm {$inboxActions.internalMessage ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-white hover:bg-gray-50'} border border-gray-200 rounded-lg flex items-center {$collapsed ? 'justify-center' : ''} {Object.entries($inboxActions).some(([key, value]) => key !== 'internalMessage' && value === true) ? 'opacity-50 cursor-not-allowed' : ''}"
                 rippleColor="#16a34a"
                 duration="500ms"
              

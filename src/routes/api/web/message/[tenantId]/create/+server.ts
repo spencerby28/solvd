@@ -40,6 +40,7 @@ export async function POST({ request, params, fetch }) {
 			]
 		);
 
+		//TODO: with attachments, can we render those inline in the email?
 		if (messageData.channel === 'email' && !messageData.internal) {
 			// Get all messages for this ticket
 			const messages = await databases.listDocuments('tickets', 'messages', [

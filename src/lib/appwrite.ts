@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Users, Teams } from 'node-appwrite';
+import { Client, Account, Databases, Users, Teams, Storage } from 'node-appwrite';
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
 import { APPWRITE_KEY } from '$env/static/private';
 
@@ -25,6 +25,9 @@ export function createAdminClient() {
         },
         get teams() {
             return new Teams(client);
+        },
+        get storage() {
+            return new Storage(client);
         }
     };
 }

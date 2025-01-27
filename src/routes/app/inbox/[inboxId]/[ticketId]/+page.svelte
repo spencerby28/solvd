@@ -11,8 +11,14 @@
     import type { TicketStatus } from '$lib/types';
     import * as ContextMenu from "$lib/components/ui/context-menu";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-    import { Edit, ChevronDown } from 'lucide-svelte';
+    import { Edit, ChevronDown, FileText, Image, Film, FileArchive, Trash2 } from 'lucide-svelte';
     import { internalMessages } from '$lib/stores/internalMessages';
+    import {createBrowserClient} from '$lib/appwrite-browser';
+    import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import { onDestroy } from 'svelte';
+
+
+
     export let data: PageData;
 
     const tenantId = data.user?.prefs.tenantId;
@@ -146,6 +152,92 @@
         const ticketMessages = $messages[ticketId] || [];
         return [...ticketMessages].sort((a, b) => new Date(a.$createdAt).getTime() - new Date(b.$createdAt).getTime());
     });
+
+    type FileData = {
+        $id: string;
+        name: string;
+        mimeType: string;
+        sizeOriginal: number;
+        previewUrl?: string;
+    };
+
+    const fileCache = new Map<string, FileData>();
+
+    function formatFileSize(bytes: number): string {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function getFileData(tenantId: string, fileId: string): Promise<FileData> {
+        if (fileCache.has(fileId)) {
+            return fileCache.get(fileId)!;
+        }
+
+        const { storage } = createBrowserClient();
+        try {
+            const fileData = await storage.getFile(tenantId, fileId);
+            const data: FileData = {
+                $id: fileData.$id,
+                name: fileData.name,
+                mimeType: fileData.mimeType,
+                sizeOriginal: fileData.sizeOriginal,
+            };
+            
+            // For videos, use view URL instead of download URL
+            if (fileData.mimeType.startsWith('video/')) {
+                data.previewUrl = storage.getFileView(tenantId, fileId);
+            } else if (fileData.mimeType.startsWith('image/')) {
+                data.previewUrl = storage.getFilePreview(tenantId, fileId);
+            } else {
+                data.previewUrl = storage.getFileDownload(tenantId, fileId);
+            }
+            
+            fileCache.set(fileId, data);
+            return data;
+        } catch (error) {
+            console.error('Error fetching file data:', error);
+            throw error;
+        }
+    }
+
+    // Add these variables to manage the delete dialog state
+    let messageToDelete: Messages | null = null;
+    
+    async function handleDeleteMessage(message: Messages) {
+        try {
+            const response = await fetch(`/api/web/message/${tenantId}/delete`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messageId: message.$id,
+                    ticketId: $page.params.ticketId
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete message');
+            }
+
+            // Remove message from local store
+            messages.remove(message);
+            // Reset the messageToDelete
+            messageToDelete = null;
+
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            // You might want to show an error notification here
+        }
+    }
+
+    let activeVideoId: string | null = null;
+
+    // When navigating away or unmounting, reset activeVideoId
+    onDestroy(() => {
+        activeVideoId = null;
+    });
 </script>
 
 <style>
@@ -235,6 +327,98 @@
                                         <span class="text-sm font-medium text-gray-900 truncate max-w-[150px]">{message.sender_name}</span>
                                     </div>
                                     <div class="rounded-2xl px-4 py-2.5 {message.sender_type === 'customer' ? 'bg-blue-100 text-gray-900' : 'bg-green-100 text-gray-800'} break-words shadow-lg ml-10">
+                                        {#if message.attachments && message.attachments.length > 0}
+                                            <div class="mb-2 space-y-2">
+                                                {#each message.attachments as fileId}
+                                                    {#await getFileData(tenantId || '', fileId)}
+                                                        <div class="rounded-lg bg-gray-100 p-2 animate-pulse">
+                                                            <div class="h-8 w-full bg-gray-200 rounded"></div>
+                                                        </div>
+                                                    {:then fileData}
+                                                        {#if fileData.mimeType.startsWith('video/')}
+                                                            <div class="rounded-lg overflow-hidden bg-gray-100">
+                                                                <div class="p-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                                                    <div class="flex items-center gap-2">
+                                                                        <Film class="h-5 w-5 text-blue-500" />
+                                                                        <div class="text-sm">
+                                                                            <div class="font-medium truncate max-w-[200px]">{fileData.name}</div>
+                                                                            <div class="text-xs text-gray-500">
+                                                                                {formatFileSize(fileData.sizeOriginal)} • {fileData.mimeType.split('/')[1].toUpperCase()}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                {#if activeVideoId === fileData.$id}
+                                                                    <video 
+                                                                        controls
+                                                                        preload="metadata"
+                                                                        class="max-w-full h-auto w-full"
+                                                                    >
+                                                                        <source src={fileData.previewUrl} type={fileData.mimeType}>
+                                                                        Your browser does not support the video tag.
+                                                                    </video>
+                                                                {:else}
+                                                                    <button 
+                                                                        class="w-full relative group"
+                                                                        on:click={() => activeVideoId = fileData.$id}
+                                                                    >
+                                                                        <div class="aspect-video bg-gray-100 flex flex-col items-center justify-center gap-3">
+                                                                            <div class="w-16 h-16 rounded-full bg-green-600/90 flex items-center justify-center group-hover:bg-green-600 transition-colors shadow-lg">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                                                    <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
+                                                                                </svg>
+                                                                            </div>
+                                                                            <span class="text-xs uppercase tracking-wide text-gray-500">Click to play video</span>
+                                                                        </div>
+                                                                    </button>
+                                                                {/if}
+                                                            </div>
+                                                        {:else if fileData.mimeType.startsWith('image/')}
+                                                            <div class="rounded-lg overflow-hidden">
+                                                                
+                                                                <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                                                                <img 
+                                                                    src={fileData.previewUrl} 
+                                                                    alt={fileData.name}
+                                                                    class="max-w-full h-auto rounded hover:opacity-90 transition-opacity cursor-pointer"
+                                                                    on:click={() => window.open(fileData.previewUrl, '_blank')}
+                                                                />
+                                                            </div>
+                                                        {:else}
+                                                            <div class=" transition-colors">
+                                                                <a 
+                                                                    href={fileData.previewUrl}
+                                                                    download={fileData.name}
+                                                                    class="flex items-center gap-3 text-sm bg-gray-100 p-2 rounded-lg hover:bg-gray-200 border border-gray-200"
+                                                                >
+                                                                    {#if fileData.mimeType.startsWith('video/')}
+                                                                        <Film class="h-5 w-5 text-blue-500" />
+                                                                    {:else if fileData.mimeType.includes('pdf')}
+                                                                        <FileText class="h-5 w-5 text-red-500" />
+                                                                    {:else if fileData.mimeType.includes('word') || fileData.mimeType.includes('document')}
+                                                                        <FileText class="h-5 w-5 text-blue-500" />
+                                                                    {:else}
+                                                                        <FileArchive class="h-5 w-5 text-gray-500" />
+                                                                    {/if}
+                                                                    
+                                                                    <div class="flex-1 min-w-0">
+                                                                        <div class="truncate font-medium">{fileData.name}</div>
+                                                                        <div class="text-xs text-gray-500">
+                                                                            {formatFileSize(fileData.sizeOriginal)} • {fileData.mimeType.split('/')[1].toUpperCase()}
+                                                                        </div>
+                                                                    </div>
+                                                                </a>
+                                                            </div>
+                                                        {/if}
+                                                    {:catch error}
+                                                        <div class="rounded-lg border border-red-200 p-3 bg-red-50 text-red-700 text-sm">
+                                                            Failed to load attachment
+                                                        </div>
+                                                    {/await}
+                                                {/each}
+                                            </div>
+                                        {/if}
+                                        
                                         {#if $inboxActions.selectedMessageId === message.$id}
                                             <textarea
                                                 bind:value={editContent}
@@ -272,6 +456,10 @@
                                     <Edit class="h-4 w-4 mr-2" />
                                     Edit Message
                                 </ContextMenu.Item>
+                                <ContextMenu.Item on:click={() => messageToDelete = message}>
+                                    <Trash2 class="h-4 w-4 mr-2" />
+                                    Delete Message
+                                </ContextMenu.Item>
                             </ContextMenu.Content>
                         {/if}
                     </ContextMenu.Root>
@@ -284,3 +472,25 @@
         {/if}
     </div>
 </div>
+
+<AlertDialog.Root open={!!messageToDelete}>
+    <AlertDialog.Content>
+        <AlertDialog.Header>
+            <AlertDialog.Title>Delete Message</AlertDialog.Title>
+            <AlertDialog.Description>
+                Are you sure you want to delete this message? This action cannot be undone.
+            </AlertDialog.Description>
+        </AlertDialog.Header>
+        <AlertDialog.Footer>
+            <AlertDialog.Cancel on:click={() => messageToDelete = null}>
+                Cancel
+            </AlertDialog.Cancel>
+            <AlertDialog.Action 
+                on:click={() => messageToDelete && handleDeleteMessage(messageToDelete)}
+                class="bg-red-100 text-red-800 border-red-200 hover:bg-red-200 focus:ring-red-200"
+            >
+                Delete
+            </AlertDialog.Action>
+        </AlertDialog.Footer>
+    </AlertDialog.Content>
+</AlertDialog.Root>

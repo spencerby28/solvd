@@ -56,16 +56,13 @@ function createMessagesStore() {
                 };
             });
         },
-        remove: (messageId: string, ticketId: string) => {
-            console.log('Removing message:', { messageId, ticketId });
-            // Remove from internal messages if present
-            internalMessages.update(msgs => msgs.filter(m => m.$id !== messageId));
-            
+        remove: (message: Messages) => {
             update(messages => {
-                const ticketMessages = messages[ticketId] || [];
+                const ticketMessages = messages[message.ticket_id] || [];
+                const updatedTicketMessages = ticketMessages.filter(m => m.$id !== message.$id);
                 return {
                     ...messages,
-                    [ticketId]: ticketMessages.filter(m => m.$id !== messageId)
+                    [message.ticket_id]: updatedTicketMessages
                 };
             });
         },
