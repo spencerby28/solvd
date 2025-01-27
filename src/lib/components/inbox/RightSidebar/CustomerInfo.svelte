@@ -53,8 +53,8 @@
             const now = new Date();
             const diffInSeconds = (now.getTime() - lastSeenDate.getTime()) / 1000;
 
-            if (diffInSeconds <= 30) return 'online';
-            if (diffInSeconds <= 300) return 'away'; // 5 minutes = 300 seconds
+            if (diffInSeconds <= 5) return 'online';
+            if (diffInSeconds <= 30) return 'away'; // 5 minutes = 300 seconds
             return 'offline';
         } catch (e) {
             return 'offline';

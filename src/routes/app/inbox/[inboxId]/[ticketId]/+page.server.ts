@@ -15,7 +15,7 @@ export const load: PageServerLoad = async (event) => {
             databases.getDocument('tickets', 'tickets', ticketId),
             databases.listDocuments('tickets', 'messages', [
                 Query.equal('ticket_id', ticketId),
-                Query.equal('sender_type', 'system'),
+                Query.equal('internal', true),
                 Query.orderAsc('$createdAt')
             ])
         ]);

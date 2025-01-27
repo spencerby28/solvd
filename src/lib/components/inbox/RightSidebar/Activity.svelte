@@ -9,6 +9,7 @@
 
     export let ticket: Tickets | undefined;
     export let messages: Messages[] = [];
+    $: console.log('messages', messages);
 
     async function handleDeleteMessage(messageId: string) {
         if (!ticket) return;
@@ -48,6 +49,8 @@
                                 <p class="text-xs text-gray-500">{new Date(message.$createdAt).toLocaleString()}</p>
                             </div>
                             {#if message.sender_id === $page.data.user.$id}
+                            
+                                <!-- svelte-ignore a11y_consider_explicit_label -->
                                 <button 
                                     class="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-gray-100 rounded"
                                     on:click={() => handleDeleteMessage(message.$id)}
