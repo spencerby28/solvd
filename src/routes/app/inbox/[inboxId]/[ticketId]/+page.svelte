@@ -363,8 +363,8 @@
                                                                         on:click={() => activeVideoId = fileData.$id}
                                                                     >
                                                                         <div class="aspect-video bg-gray-100 flex flex-col items-center justify-center gap-3">
-                                                                            <div class="w-16 h-16 rounded-full bg-green-600/90 flex items-center justify-center group-hover:bg-green-600 transition-colors shadow-lg">
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                                                            <div class="w-16 h-16 rounded-full border-2 border-green-600 flex items-center justify-center group-hover:border-green-700 transition-colors">
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600 group-hover:text-green-700 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                                                                     <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
                                                                                 </svg>
                                                                             </div>
