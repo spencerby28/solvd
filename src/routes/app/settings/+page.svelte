@@ -4,6 +4,9 @@
     import Avatar from '$lib/components/ui/Avatar.svelte';
     import * as Dropdown from '$lib/components/ui/dropdown-menu';
     import type { PageData } from './$types';
+    import { uploadFile } from '$lib/db/upload';
+    import { toast } from 'svelte-sonner';
+    import { Images } from 'lucide-svelte';
     
     let avatarFile: File | null = null;
     let avatarPreview: string | null = null;
@@ -12,15 +15,29 @@
     let selectedRole = '';
     let selectedStatus = '';
     let inviteEmail = '';
+    let isUploading = false;
 
     export let data: PageData;
-    console.log(data.agents)
+
     
-    function handleAvatarChange(event: Event) {
+    $: isAdmin = data.user.prefs.admin === true || data.user.prefs.admin === "true";
+    
+  async function handleAvatarChange(event: Event) {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files[0]) {
             avatarFile = input.files[0];
             avatarPreview = URL.createObjectURL(input.files[0]);
+            isUploading = true;
+            
+            try {
+                const returnId = await uploadFile(avatarFile, $page.data.tenant.$id, $page.data.tenant.$id, $page.data.user.$id, true);
+                toast.success('Profile Picture updated!', {
+                    icon: Images,
+                    duration: 5000,
+                });
+            } finally {
+                isUploading = false;
+            }
         }
     }
 
@@ -56,7 +73,11 @@
                selectedRole && 
                selectedStatus;
     }
+
+    //TODO: I want to add mor euser information to their profile tab
+
 </script>
+
 
 <div class="min-h-screen bg-gray-50/50">
     <div class="max-w-4xl mx-auto py-8 px-4 space-y-6">
@@ -98,9 +119,16 @@
                     <div class="space-y-3">
                         <label class="text-sm font-medium text-gray-700">Profile Picture</label>
                         <div class="flex items-center space-x-4">
-                            <div class="w-20 h-20 rounded-3xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                            <div class="relative w-20 h-20 rounded-3xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
                                 {#if avatarPreview}
                                     <img src={avatarPreview} alt="Avatar preview" class="w-full h-full object-cover" />
+                                    {#if isUploading}
+                                        <div class="absolute bottom-0 left-0 right-0 text-center bg-gray-800/75 py-1">
+                                            <span class="text-xs text-gray-200">Uploading...</span>
+                                        </div>
+                                    {/if}
+                                {:else if $page.data.user?.prefs?.avatar_url}
+                                    <img src={$page.data.user.prefs.avatar_url} alt="User avatar" class="w-full h-full object-cover" />
                                 {:else}
                                     <Avatar user={$page.data.user} size="lg" />
                                 {/if}
@@ -210,52 +238,54 @@
 
         {#if activeTab === 'team'}
             <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div class="border-b border-gray-200 bg-gray-50/80 px-6 py-4">
+                <div class=" bg-gray-50/80 px-6 py-4">
                     <h2 class="text-lg font-medium text-gray-900">Team Management</h2>
                 </div>
                 
                 <div class="p-6 space-y-6">
                     <!-- Agents List -->
-                    <div class="">
-                        <div class="overflow-x-auto rounded-lg border border-gray-200">
-                            <div class="max-h-[600px] overflow-y-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50 sticky top-0 z-10">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Agent</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Department</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Role</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Status</th>
+                    <div class="-mx-6 -mt-6">
+                        <div class="{isAdmin ? 'border-b border-gray-200' : ''}">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Agent</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Department</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Status</th>
+                                        {#if isAdmin}
                                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        {#each data.agents || [] as agent}
-                                            <tr class="hover:bg-gray-50">
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="flex items-center">
-                                                        <div class="flex-shrink-0 h-10 w-10">
-                                                            <Avatar user={agent} size="sm" />
-                                                        </div>
-                                                        <div class="ml-4">
-                                                            <div class="text-sm font-medium text-gray-900">{agent.name}</div>
-                                                            <div class="text-sm text-gray-500">{agent.email}</div>
-                                                        </div>
+                                        {/if}
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {#each data.agents || [] as agent}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <Avatar user={agent} size="sm" />
                                                     </div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900">{agent.department || '-'}</div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <div class="text-sm text-gray-900 capitalize">{agent.role}</div>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                        {agent.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                                                        {agent.status}
-                                                    </span>
-                                                </td>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900">{agent.name}</div>
+                                                        <div class="text-sm text-gray-500">{agent.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900">{agent.department || '-'}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="text-sm text-gray-900 capitalize">{agent.role}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold 
+                                                    {agent.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                                                    {agent.status}
+                                                </span>
+                                            </td>
 
+                                            {#if isAdmin}
                                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <Dropdown.Root bind:open={dropdownOpenStates[agent.$id]}>
                                                         <Dropdown.Trigger class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 transition-colors ml-auto">
@@ -289,119 +319,121 @@
                                                         </Dropdown.Content>
                                                     </Dropdown.Root>
                                                 </td>
-                                            </tr>
-                                        {/each}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            {/if}
+                                        </tr>
+                                    {/each}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <!-- Invite New Member Form -->
-                    <form method="POST" action="?/inviteMember" use:enhance class="space-y-4">
-                        <h3 class="text-lg font-medium text-gray-700">Invite New Member</h3>
-                        <div class="space-y-4">
-                            <div class="space-y-2">
-                                <label for="inviteEmail" class="text-sm font-medium text-gray-700">Email Address</label>
-                                <input
-                                    type="email"
-                                    id="inviteEmail"
-                                    name="inviteEmail"
-                                    bind:value={inviteEmail}
-                                    class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
-                                    placeholder="colleague@example.com"
-                                />
-                            </div>
-
-                            <h4 class="text-sm font-medium text-gray-700">Configure Profile</h4>
-                            <div class="flex items-center gap-4">
-                                <div class="flex gap-4 flex-1">
-                                    <Dropdown.Root>
-                                        <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedDepartment ? 'border-green-600 text-green-700 bg-green-50' : ''}">
-                                            <span>{selectedDepartment || 'Department'}</span>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </Dropdown.Trigger>
-                                        <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                                            {#each ['Sales', 'Support', 'Engineering', 'Marketing'] as dept}
-                                                <Dropdown.Item 
-                                                    class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedDepartment === dept ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
-                                                    on:click={() => selectedDepartment = dept}
-                                                >
-                                                    {dept}
-                                                    {#if selectedDepartment === dept}
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                        </svg>
-                                                    {/if}
-                                                </Dropdown.Item>
-                                            {/each}
-                                        </Dropdown.Content>
-                                    </Dropdown.Root>
-
-                                    <Dropdown.Root>
-                                        <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedRole ? 'border-green-600 text-green-700 bg-green-50' : ''}">
-                                            <span>{selectedRole || 'Role'}</span>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </Dropdown.Trigger>
-                                        <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                                            {#each ['Admin', 'Agent', 'Manager'] as role}
-                                                <Dropdown.Item 
-                                                    class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedRole === role ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
-                                                    on:click={() => selectedRole = role}
-                                                >
-                                                    {role}
-                                                    {#if selectedRole === role}
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                        </svg>
-                                                    {/if}
-                                                </Dropdown.Item>
-                                            {/each}
-                                        </Dropdown.Content>
-                                    </Dropdown.Root>
-
-                                    <Dropdown.Root>
-                                        <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedStatus ? 'border-green-600 text-green-700 bg-green-50' : ''}">
-                                            <span>{selectedStatus || 'Status'}</span>
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                            </svg>
-                                        </Dropdown.Trigger>
-                                        <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
-                                            {#each ['Active', 'Inactive', 'Pending'] as status}
-                                                <Dropdown.Item 
-                                                    class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedStatus === status ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
-                                                    on:click={() => selectedStatus = status}
-                                                >
-                                                    {status}
-                                                    {#if selectedStatus === status}
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                                        </svg>
-                                                    {/if}
-                                                </Dropdown.Item>
-                                            {/each}
-                                        </Dropdown.Content>
-                                    </Dropdown.Root>
+                    {#if isAdmin}
+                        <!-- Invite New Member Form -->
+                        <form method="POST" action="?/inviteMember" use:enhance class="space-y-4">
+                            <h3 class="text-lg font-medium text-gray-700">Invite New Member</h3>
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <label for="inviteEmail" class="text-sm font-medium text-gray-700">Email Address</label>
+                                    <input
+                                        type="email"
+                                        id="inviteEmail"
+                                        name="inviteEmail"
+                                        bind:value={inviteEmail}
+                                        class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-shadow"
+                                        placeholder="colleague@example.com"
+                                    />
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={!isValidInvite()}
-                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                                    </svg>
-                                    Send Invitation
-                                </button>
+                                <h4 class="text-sm font-medium text-gray-700">Configure Profile</h4>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex gap-4 flex-1">
+                                        <Dropdown.Root>
+                                            <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedDepartment ? 'border-green-600 text-green-700 bg-green-50' : ''}">
+                                                <span>{selectedDepartment || 'Department'}</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </Dropdown.Trigger>
+                                            <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                                {#each ['Sales', 'Support', 'Engineering', 'Marketing'] as dept}
+                                                    <Dropdown.Item 
+                                                        class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedDepartment === dept ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
+                                                        on:click={() => selectedDepartment = dept}
+                                                    >
+                                                        {dept}
+                                                        {#if selectedDepartment === dept}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        {/if}
+                                                    </Dropdown.Item>
+                                                {/each}
+                                            </Dropdown.Content>
+                                        </Dropdown.Root>
+
+                                        <Dropdown.Root>
+                                            <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedRole ? 'border-green-600 text-green-700 bg-green-50' : ''}">
+                                                <span>{selectedRole || 'Role'}</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </Dropdown.Trigger>
+                                            <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                                {#each ['Admin', 'Agent', 'Manager'] as role}
+                                                    <Dropdown.Item 
+                                                        class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedRole === role ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
+                                                        on:click={() => selectedRole = role}
+                                                    >
+                                                        {role}
+                                                        {#if selectedRole === role}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        {/if}
+                                                    </Dropdown.Item>
+                                                {/each}
+                                            </Dropdown.Content>
+                                        </Dropdown.Root>
+
+                                        <Dropdown.Root>
+                                            <Dropdown.Trigger class="min-w-[140px] px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm hover:bg-gray-50 flex items-center justify-between {selectedStatus ? 'border-green-600 text-green-700 bg-green-50' : ''}">
+                                                <span>{selectedStatus || 'Status'}</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </Dropdown.Trigger>
+                                            <Dropdown.Content class="w-48 bg-white border border-gray-200 rounded-lg shadow-lg">
+                                                {#each ['Active', 'Inactive', 'Pending'] as status}
+                                                    <Dropdown.Item 
+                                                        class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 flex items-center justify-between {selectedStatus === status ? 'text-green-700 bg-green-50' : 'text-gray-700'}"
+                                                        on:click={() => selectedStatus = status}
+                                                    >
+                                                        {status}
+                                                        {#if selectedStatus === status}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                            </svg>
+                                                        {/if}
+                                                    </Dropdown.Item>
+                                                {/each}
+                                            </Dropdown.Content>
+                                        </Dropdown.Root>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={!isValidInvite()}
+                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                                        </svg>
+                                        Send Invitation
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    {/if}
                 </div>
             </section>
         {/if}

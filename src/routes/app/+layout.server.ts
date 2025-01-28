@@ -13,6 +13,9 @@ export const load: LayoutServerLoad = async (event) => {
     try {
         const { databases } = createSessionClient(event);
         const tenantId = event.locals.user.prefs.tenantId;
+        if (!tenantId) {
+            throw new Error('No tenant ID set for user');
+        }
         const currentPath = event.url.pathname;
         
         // Fetch tenant data, tickets, and messages in parallel

@@ -13,21 +13,15 @@ export const load: PageServerLoad = async ({ parent }) => {
 
     try {
         const { databases } = createAdminClient();
-        
-        // Get all agent details for the user_ids
-        const agentPromises = tenant.user_ids.map(async (userId: string) => {
-            const response = await databases.listDocuments(
-                'tenants',
-                'agents',
-                [Query.equal('$id', userId)]
-            );
-            return response.documents[0];
-        });
 
-        const agents = await Promise.all(agentPromises);
+        const response = await databases.listDocuments(
+            'tenants',
+            'agents',
+            [Query.equal('tenant_id', tenant.$id), Query.limit(100)]
+        );
 
         return {
-            agents: agents.filter(agent => agent) // Remove any null results
+            agents: response.documents
         };
 
     } catch (err) {

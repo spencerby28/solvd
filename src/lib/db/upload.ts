@@ -1,12 +1,13 @@
 import { ID } from 'appwrite';
 import { createBrowserClient } from '$lib/appwrite-browser';
 
-export async function uploadFile(file: File, customerId: string, tenantId: string, userId: string) {
-    const { storage } = createBrowserClient();
+export async function uploadFile(file: File, customerId?: string, tenantId?: string, userId?: string, avatar?: boolean) {
+    const { storage, databases } = createBrowserClient();
 
     try {
         // Upload the file to the tenant's bucket
         const uploadedFile = await storage.createFile(
+            //@ts-ignore
             tenantId, // bucket ID is the tenant ID
             ID.unique(),
             file
@@ -21,13 +22,17 @@ export async function uploadFile(file: File, customerId: string, tenantId: strin
             body: JSON.stringify({
                 fileId: uploadedFile.$id,
                 tenantId,
-                customerId
+                customerId,
+                userId, 
+                avatar
             })
         });
 
         if (!response.ok) {
             throw new Error('Failed to update file permissions');
         }
+
+ 
 
         return uploadedFile.$id;
 

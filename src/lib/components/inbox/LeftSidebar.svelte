@@ -292,21 +292,22 @@
                     {/if}
                 </div>
             </button>
-
             <!-- User Profile -->
             <DropdownMenu.Root>
-                <DropdownMenu.Trigger class="w-full flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 px-1" on:click={() => goto('/user')}>
-                    <div class="flex items-center gap-2">
+                <DropdownMenu.Trigger class="w-full flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 pr-2" on:click={() => goto('/user')}>
+                    <div class="flex items-center gap-3">
                         {#if user}
-                            <img 
-                                src={user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=16a34a&color=fff`}
-                                alt={user.name}
-                                class="w-8 h-8 rounded-full transition-all duration-200"
-                            />
+                            <div class="flex-shrink-0">
+                                <img 
+                                    src={user.prefs.avatar_url || `https://ui-avatars.com/api/?name=${user.name}&background=16a34a&color=fff`}
+                                    alt={user.name}
+                                    class="w-10 h-10 rounded-xl transition-all duration-200 object-cover"
+                                />
+                            </div>
                             {#if !isCollapsed}
-                                <div class="flex flex-col items-start" transition:slide|local>
-                                    <span class="text-sm font-medium">{user.name}</span>
-                                    <span class="text-xs text-gray-500">{user.email}</span>
+                                <div class="flex flex-col items-start min-w-0" transition:slide|local>
+                                    <span class="text-sm font-medium truncate w-full">{user.name}</span>
+                                    <span class="text-xs text-gray-500 truncate w-full">{user.email}</span>
                                 </div>
                             {/if}
                         {/if}
