@@ -58,7 +58,7 @@ export const GET = async ({ url }) => {
     const nonce = crypto.randomBytes(16).toString('hex');
 
     // Build redirect URL
-    const redirectUri = 'https://sv.hotshotdev.com/api/callback/shopify'; // Update this with your actual redirect URI
+    const redirectUri = 'https://app.getsolvd.xyz/api/callback/shopify'; // Update this with your actual redirect URI
     const authUrl = new URL(`https://${shop}/admin/oauth/authorize`);
     authUrl.searchParams.append('client_id', SHOPIFY_CLIENT_ID);
     authUrl.searchParams.append('redirect_uri', redirectUri);
