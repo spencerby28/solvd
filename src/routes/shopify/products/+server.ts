@@ -1,3 +1,6 @@
+
+
+/*  
 import '@shopify/shopify-api/adapters/node';
 import { shopifyApi, LATEST_API_VERSION } from '@shopify/shopify-api';
 import { SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SHOPIFY_ADMIN_API_KEY } from '$env/static/private';
@@ -38,3 +41,4 @@ export const GET = async ({ request }) => {
     return json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 };
+*/

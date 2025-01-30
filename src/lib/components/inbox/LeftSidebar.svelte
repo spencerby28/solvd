@@ -294,20 +294,23 @@
             </button>
             <!-- User Profile -->
             <DropdownMenu.Root>
-                <DropdownMenu.Trigger class="w-full flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 pr-2" on:click={() => goto('/user')}>
+                <DropdownMenu.Trigger 
+                    class="w-full flex items-start {isActive('/user') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg py-2 pr-2" 
+                    on:click={() => goto('/user')}
+                >
                     <div class="flex items-center gap-3">
                         {#if user}
                             <div class="flex-shrink-0">
                                 <img 
                                     src={user.prefs.avatar_url || `https://ui-avatars.com/api/?name=${user.name}&background=16a34a&color=fff`}
                                     alt={user.name}
-                                    class="w-10 h-10 rounded-xl transition-all duration-200 object-cover"
+                                    class="w-8 h-8 rounded-lg transition-all duration-200 object-cover"
                                 />
                             </div>
                             {#if !isCollapsed}
-                                <div class="flex flex-col items-start min-w-0" transition:slide|local>
-                                    <span class="text-sm font-medium truncate w-full">{user.name}</span>
-                                    <span class="text-xs text-gray-500 truncate w-full">{user.email}</span>
+                                <div class="flex flex-col items-start min-w-0" transition:fade|local={{ duration: 100 }}>
+                                    <span class="text-sm font-medium truncate w-full text-left">{user.name}</span>
+                                    <span class="text-xs text-gray-500 truncate w-full text-left">{user.email}</span>
                                 </div>
                             {/if}
                         {/if}
@@ -317,22 +320,13 @@
                     <DropdownMenu.Item href="app/profile">View Profile</DropdownMenu.Item>
                     <DropdownMenu.Item href="app/profile/notifications">Notifications</DropdownMenu.Item>
                     <DropdownMenu.Separator />
+                    <DropdownMenu.Item on:click={() => changeTenantOpen = true}>
+                        Switch Team
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Separator />
                     <DropdownMenu.Item class="text-red-600" href="/auth/logout">Sign out</DropdownMenu.Item>
                 </DropdownMenu.Content>
             </DropdownMenu.Root>
-
-            <!-- Modify the team switcher button to open the modal instead of navigating -->
-            <button 
-                class="w-full p-2 mb-2 flex items-center {isCollapsed ? 'justify-center' : 'justify-between'} {isActive('/app/teams') ? 'bg-green-600 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-lg"
-                on:click={() => changeTenantOpen = true}
-            >
-                <div class="flex items-center {isCollapsed ? 'gap-0' : 'gap-4'}">
-                    <Users class="w-5 h-5" />
-                    {#if !isCollapsed}
-                        <span class="font-bold" transition:slide|local>Switch Team</span>
-                    {/if}
-                </div>
-            </button>
         </div>
     </div>
 </aside>

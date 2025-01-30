@@ -7,6 +7,12 @@ export const load: PageServerLoad = async (event) => {
     const { ticketId } = event.params;
     const { databases } = createSessionClient(event);
     const allMessages = [];
+    const user = event.locals.user;
+    if (!user) {
+        throw error(401, {
+            message: 'Unauthorized'
+        });
+    }
     let lastId = null;
     
     try {
